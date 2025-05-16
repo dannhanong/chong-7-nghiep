@@ -1,0 +1,70 @@
+server:
+  port: 8082
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://admin:newpass@dannhanong.0qmy0.mongodb.net/jobs_job?retryWrites=true&w=majority&appName=dannhanong&ssl=true&tlsAllowInvalidCertificates=true&tlsAllowInvalidHostnames=true
+
+  kafka:
+    # bootstrap-servers: ${KAFKA_HOST:https://special-giggle-4jjqppww6rj435rwg-9094.app.github.dev}:${KAFKA_PORT:9094}
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9094}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: job-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring:
+          deserializer:
+            value:
+              delegate:
+                class: org.springframework.kafka.support.serializer.JsonDeserializer
+          json:
+            trusted:
+              packages: "*"
+            value:
+              default:
+                type: com.dan.events.dtos.EventAddSignature
+            use:
+              type:
+                headers: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:9999/eureka/}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+feign:
+  multipart:
+    enabled: true
+
+oauth2:
+  identity:
+    client-id: ${CLIENT_ID:1}
+    client-secret: ${CLIENT_SECRET:2}
+    redirect-uri: ${REDIRECT_URI:3}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      companyService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000ms
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
