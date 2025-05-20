@@ -34,4 +34,5 @@ public class Skill extends BaseEntity{
     //chung chi
     private String certifications;
     private String description;
+    private String file;
 }
