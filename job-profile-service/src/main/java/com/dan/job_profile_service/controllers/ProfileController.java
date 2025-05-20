@@ -31,6 +31,15 @@ public class ProfileController {
         }
     }
 
+    @GetMapping("/admin/get-full-profile/{id}")
+    public ResponseEntity<?> getFullProfileById(@PathVariable String id){
+        try {
+            return ResponseEntity.ok(profileService.getFullProfileById(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 
     @GetMapping("/admin")
     public ResponseEntity<?> getAllProfiles(){

@@ -1,10 +1,17 @@
 package com.dan.job_profile_service.services.impl;
 
 import com.dan.job_profile_service.dtos.requests.ProfileRequest;
+import com.dan.job_profile_service.dtos.responses.ProfileFullResponse;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.http_clients.FileServiceClient;
+import com.dan.job_profile_service.models.Education;
+import com.dan.job_profile_service.models.Experience;
 import com.dan.job_profile_service.models.Profile;
+import com.dan.job_profile_service.models.Skill;
+import com.dan.job_profile_service.repositories.EducationRepository;
+import com.dan.job_profile_service.repositories.ExperienceRepository;
 import com.dan.job_profile_service.repositories.ProfileRepository;
+import com.dan.job_profile_service.repositories.SkillRepository;
 import com.dan.job_profile_service.services.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
@@ -19,7 +26,27 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
     private final ProfileRepository profileRepository;
+    private final EducationRepository educationRepository;
+    private final SkillRepository skillRepository;
+    private final ExperienceRepository experienceRepository;
     private final FileServiceClient fileServiceClient;
+
+    @Override
+    public ProfileFullResponse getFullProfileById(String profileId) {
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ với id: " + profileId));
+
+        List<Education> educations = educationRepository.findByProfileId(profileId);
+        List<Skill> skills = skillRepository.findByProfileId(profileId);
+        List<Experience> experiences = experienceRepository.findByProfileId(profileId);
+
+        return ProfileFullResponse.builder()
+                .profile(profile)
+                .educations(educations)
+                .skills(skills)
+                .experiences(experiences)
+                .build();
+    }
 
     @Override
     public List<Profile> getAllProfiles() {

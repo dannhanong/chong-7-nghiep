@@ -60,7 +60,8 @@ public class SkillServiceImpl implements SkillService {
         }
         return skillRepository.save(newSkill);
     }
-    
+
+
     @Override
     public Skill update(SkillRequest skillRequest, String id) {
             Skill existingSkill = getSkillById(id);
