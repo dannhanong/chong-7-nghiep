@@ -19,10 +19,8 @@ import com.dan.identity_service.dtos.requests.StaffAccountRequest;
 import com.dan.identity_service.dtos.responses.LoginResponse;
 import com.dan.identity_service.dtos.responses.ResponseMessage;
 import com.dan.identity_service.models.Role;
-import com.dan.identity_service.models.SolanaTransaction;
 import com.dan.identity_service.models.User;
 import com.dan.identity_service.repositories.RoleRepository;
-import com.dan.identity_service.repositories.SolanaTransactionRepository;
 import com.dan.identity_service.repositories.UserRepository;
 import com.dan.identity_service.security.jwt.JwtService;
 import com.dan.identity_service.services.AccountService;
@@ -42,8 +40,6 @@ public class AccountServiceImpl implements AccountService {
     private RoleRepository roleRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
-    @Autowired
-    private SolanaTransactionRepository solanaTransactionRepository;
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
     @Autowired
@@ -153,15 +149,6 @@ public class AccountServiceImpl implements AccountService {
             .status(200)
             .message("Xác thực tài khoản thành công")
             .build();
-    }
-
-    @Override
-    public void addSignature(String userId, String signature, String pda) {
-        SolanaTransaction transaction = new SolanaTransaction();
-        transaction.setUserId(userId);
-        transaction.setSignature(signature);
-        transaction.setPda(pda);
-        solanaTransactionRepository.save(transaction);        
     }
 
     @Override

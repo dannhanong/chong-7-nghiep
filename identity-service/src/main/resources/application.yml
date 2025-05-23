@@ -18,7 +18,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
-      group-id: identity-group-new  # Thay đổi group-id
+      group-id: identity-group  # Thay đổi group-id
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
@@ -62,6 +62,6 @@ feign:
 
 oauth2:
   identity:
-    client-id: ${CLIENT_ID}
-    client-secret: ${CLIENT_SECRET}
-    redirect-uri: ${REDIRECT_URI}
+    client-id: ${CLIENT_ID:1}
+    client-secret: ${CLIENT_SECRET:1}
+    redirect-uri: ${REDIRECT_URI:1}

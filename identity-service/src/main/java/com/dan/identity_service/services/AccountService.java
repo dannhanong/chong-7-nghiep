@@ -11,7 +11,6 @@ public interface AccountService {
     User signup(SignupRequest signupRequest);
     User createByAdmin(SignupRequest signupRequest);
     ResponseMessage verify(String token);
-    void addSignature(String userId, String signature, String pda);
     LoginResponse login(LoginRequest loginRequest);
     ResponseMessage createStaffAccount(StaffAccountRequest StaffAccountRequest, String username);
 }
