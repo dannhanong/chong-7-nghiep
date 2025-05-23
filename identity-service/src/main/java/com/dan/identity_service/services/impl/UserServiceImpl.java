@@ -23,10 +23,8 @@ import com.dan.identity_service.http_clients.FileServiceClient;
 import com.dan.identity_service.http_clients.Oauth2IdentityClient;
 import com.dan.identity_service.http_clients.Oauth2UserClient;
 import com.dan.identity_service.models.Role;
-import com.dan.identity_service.models.SolanaTransaction;
 import com.dan.identity_service.models.User;
 import com.dan.identity_service.repositories.RoleRepository;
-import com.dan.identity_service.repositories.SolanaTransactionRepository;
 import com.dan.identity_service.repositories.UserRepository;
 import com.dan.identity_service.services.UserService;
 
@@ -34,7 +32,6 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,8 +39,6 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private SolanaTransactionRepository solanaTransactionRepository;
     @Autowired
     private Oauth2IdentityClient oauth2IdentityClient;
     @Autowired
@@ -103,7 +98,6 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new UsernameNotFoundException("Không tìm thấy người dùng");
         }
-        List<SolanaTransaction> transactions = solanaTransactionRepository.findByUserId(user.getId());
         return UserProfile.builder()
                 .name(user.getName())
                 .username(user.getUsername())
@@ -116,7 +110,6 @@ public class UserServiceImpl implements UserService {
                     .get().getName().toString()
                 )
                 .avatarCode(user.getAvatarCode())
-                .transactions(transactions)
                 .createdAt(user.getCreatedAt())
                 .title(user.getTitle())
                 .bio(user.getBio())
@@ -262,16 +255,6 @@ public class UserServiceImpl implements UserService {
 
         user.setUpdatedAt(LocalDateTime.now());
         User updatedUser = userRepository.save(user);
-
-        // kafkaTemplate.send("job-update-user-blockchain", EventUpdateUser.builder()
-        //     .id(updatedUser.getId())
-        //     .email(updatedUser.getEmail())
-        //     .phoneNumber(updatedUser.getPhoneNumber())
-        //     .address(updatedUser.getAddress())
-        //     .enabled(updatedUser.isEnabled())
-        //     .role(updatedUser.getRoles().stream().map(Role::getName).collect(Collectors.toList()).get(0).name().toLowerCase())
-        //     .build()
-        // );
 
         return ResponseMessage.builder()
             .status(200)

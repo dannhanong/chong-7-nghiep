@@ -21,12 +21,6 @@ public class EventController {
     @Autowired
     private UserService userService;
 
-    @KafkaListener(topics = "job-add-signature-user")
-    public void listenJobAddSignatureUser(EventAddSignature message) {
-        System.out.println("Received message: " + message.toString());
-        accountService.addSignature(message.getId(), message.getSignature(), message.getPda());
-    }
-
     @KafkaListener(topics = "job_plus_job_count")
     public void listenJobPlusJobCount(String message) {
         userService.plusJobCount(message);
