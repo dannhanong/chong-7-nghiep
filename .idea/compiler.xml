@@ -2,7 +2,6 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
-      <profile default="true" name="Default" enabled="true" />
       <profile name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -19,7 +18,7 @@
         </processorPath>
         <module name="job-profile-service" />
       </profile>
-      <profile name="Annotation profile for job-service" enabled="true">
+      <profile name="Annotation profile for identity-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -27,6 +26,7 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
         </processorPath>
         <module name="job-service" />
+        <module name="identity-service" />
         <module name="file-service" />
       </profile>
     </annotationProcessing>
@@ -36,6 +36,7 @@
       <module name="api-gateway" options="-parameters" />
       <module name="discovery-service" options="-parameters" />
       <module name="file-service" options="-parameters" />
+      <module name="identity-service" options="-parameters" />
       <module name="job-profile-service" options="-parameters" />
       <module name="job-service" options="-parameters" />
     </option>
