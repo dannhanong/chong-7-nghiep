@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/profiles")
+@RequestMapping("/jp/profiles")
 @RequiredArgsConstructor
 public class ProfileController {
     private final ProfileService profileService;
