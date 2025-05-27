@@ -38,10 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
                     .message("Thêm danh mục thành công")
                     .build();
         } catch (Exception e) {
-            return ResponseMessage.builder()
-                    .status(500)
-                    .message("Thêm danh mục thất bại")
-                    .build();
+            throw new RuntimeException("Thêm danh mục thất bại: " + e.getMessage());
         }
     }
 
