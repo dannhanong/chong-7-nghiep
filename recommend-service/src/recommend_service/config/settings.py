@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     PORT: int = int(os.getenv("PORT", "5000"))
 
     # Cài đặt MongoDB
-    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb+srv://admin:newpass@dannhanong.0qmy0.mongodb.net")
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://root:123456@103.216.117.244:27017")
     MONGODB_JOB_DATABASE: str = os.getenv("MONGODB_JOB_DATABASE", "jobs_job")
     MONGODB_JOBS_COLLECTION: str = os.getenv("MONGODB_JOBS_COLLECTION", "jobs")
     MONGODB_USER_DATABASE: str = os.getenv("MONGODB_USER_DATABASE", "jobs_auth")
