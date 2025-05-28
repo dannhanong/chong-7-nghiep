@@ -18,7 +18,7 @@ public class ExperienceController {
 
     private final ExperienceService experienceService;
 
-    @PostMapping("/admin/create")
+    @PostMapping("/create")
     public ResponseEntity<ResponseMessage> createExperience(
             @Valid @RequestBody ExperienceRequest experienceRequest
     ) {
@@ -30,12 +30,12 @@ public class ExperienceController {
         }
     }
 
-    @GetMapping("/admin")
+    @GetMapping("")
     public ResponseEntity<List<Experience>> getAllExperiences() {
         return ResponseEntity.ok(experienceService.getAllExperiences());
     }
 
-    @GetMapping("/admin/get/{id}")
+    @GetMapping("/get/{id}")
     public ResponseEntity<?> getExperienceById(@PathVariable String id) {
         try {
             Experience exp = experienceService.getExperienceById(id);
@@ -47,7 +47,7 @@ public class ExperienceController {
         }
     }
 
-    @PutMapping("/admin/update/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<ResponseMessage> updateExperience(
             @Valid @RequestBody ExperienceRequest experienceRequest,
             @PathVariable String id
@@ -60,7 +60,7 @@ public class ExperienceController {
         }
     }
 
-    @DeleteMapping("/admin/delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseMessage> deleteExperience(@PathVariable String id) {
         return ResponseEntity.ok(experienceService.delete(id));
     }

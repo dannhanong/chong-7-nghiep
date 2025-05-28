@@ -17,7 +17,7 @@ public class ProfileController {
     private final ProfileService profileService;
 
     @PostMapping(
-            path = "/admin/create",
+            path = "/create",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<ResponseMessage> createProfile(
@@ -31,7 +31,7 @@ public class ProfileController {
         }
     }
 
-    @GetMapping("/admin/get-full-profile/{id}")
+    @GetMapping("/get-full-profile/{id}")
     public ResponseEntity<?> getFullProfileById(@PathVariable String id){
         try {
             return ResponseEntity.ok(profileService.getFullProfileById(id));
@@ -41,7 +41,7 @@ public class ProfileController {
     }
 
 
-    @GetMapping("/admin")
+    @GetMapping("")
     public ResponseEntity<?> getAllProfiles(){
         try {
             return ResponseEntity.ok(profileService.getAllProfiles());
@@ -49,7 +49,7 @@ public class ProfileController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @GetMapping("/admin/get/{id}")
+    @GetMapping("/get/{id}")
     public ResponseEntity<?> getProfileById(@Valid @PathVariable String id){
         try {
             return ResponseEntity.ok(profileService.getProfileById(id));
@@ -59,7 +59,7 @@ public class ProfileController {
     }
 
     @PutMapping(
-            path = "/admin/update/{id}",
+            path = "/update/{id}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<ResponseMessage> updateProfile(@Valid @ModelAttribute ProfileRequest profileRequest, @PathVariable String id) {
@@ -71,7 +71,7 @@ public class ProfileController {
         }
     }
 
-    @DeleteMapping("/admin/delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseMessage> deleteProfile(@PathVariable String id) {
         return ResponseEntity.ok(profileService.delete(id));
     }

@@ -19,7 +19,7 @@ public class SkillController {
     private final SkillService skillService;
 
     @PostMapping(
-            path = "/admin/create",
+            path = "/create",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<ResponseMessage> createSkill(
@@ -32,12 +32,12 @@ public class SkillController {
         }
     }
 
-    @GetMapping("/admin")
+    @GetMapping("")
     public ResponseEntity<?> getAllSkills() {
         return ResponseEntity.ok(skillService.getAllSkills());
     }
 
-    @GetMapping("/admin/get/{id}")
+    @GetMapping("/get/{id}")
     public ResponseEntity<?> getSkillById(@PathVariable String id) {
         try {
             Skill skill = skillService.getSkillById(id);
@@ -50,7 +50,7 @@ public class SkillController {
     }
 
     @PutMapping(
-            path = "/admin/update/{id}",
+            path = "/update/{id}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<ResponseMessage> updateSkill(
@@ -65,7 +65,7 @@ public class SkillController {
         }
     }
 
-    @DeleteMapping("/admin/delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseMessage> deleteSkill(@PathVariable String id) {
         return ResponseEntity.ok(skillService.delete(id));
     }
