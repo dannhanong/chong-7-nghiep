@@ -18,7 +18,7 @@ public class EducationController {
 
     private final EducationService educationService;
 
-    @PostMapping("/admin/create")
+    @PostMapping("/create")
     public ResponseEntity<ResponseMessage> createEducation(
             @Valid @RequestBody EducationRequest educationRequest
     ) {
@@ -30,13 +30,13 @@ public class EducationController {
         }
     }
 
-    @GetMapping("/admin")
+    @GetMapping("")
     public ResponseEntity<List<Education>> getAllEducations() {
         List<Education> educations = educationService.getAllEducations();
         return ResponseEntity.ok(educations);
     }
 
-    @GetMapping("/admin/get/{id}")
+    @GetMapping("/get/{id}")
     public ResponseEntity<?> getEducationById(@PathVariable String id) {
         try {
             Education edu = educationService.getEducationById(id);
@@ -48,7 +48,7 @@ public class EducationController {
         }
     }
 
-    @PutMapping("/admin/update/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<ResponseMessage> updateEducation(
             @Valid @RequestBody EducationRequest educationRequest,
             @PathVariable String id
@@ -61,7 +61,7 @@ public class EducationController {
         }
     }
 
-    @DeleteMapping("/admin/delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseMessage> deleteEducation(@PathVariable String id) {
         ResponseMessage resp = educationService.delete(id);
         return ResponseEntity.status(resp.getStatus()).body(resp);
