@@ -8,13 +8,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dan.job_profile_service.configs.AuthenticationRequestInterceptor;
+
 import java.util.Map;
 
-@FeignClient(name = "file-service",
-            url = "${file.service.url}"
-//        configuration = {AuthenticationRequestInterceptor.class},
-//        url = "${base.url.file-service}")
-)
+@FeignClient(name = "file-service", configuration = {AuthenticationRequestInterceptor.class})
 public interface FileServiceClient {
     @PostMapping(value = "/files/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     Map<String, String> uploadFile(@RequestPart("file") MultipartFile file);
