@@ -2,10 +2,9 @@ package com.dan.job_profile_service.services.impl;
 
 import com.dan.job_profile_service.dtos.requests.ExperienceRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
+import com.dan.job_profile_service.http_clients.IdentityServiceClient;
 import com.dan.job_profile_service.models.Experience;
-import com.dan.job_profile_service.models.Profile;
 import com.dan.job_profile_service.repositories.ExperienceRepository;
-import com.dan.job_profile_service.repositories.ProfileRepository;
 import com.dan.job_profile_service.services.ExperienceService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
@@ -18,11 +17,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExperienceServiceImpl implements ExperienceService {
     private final ExperienceRepository experienceRepository;
-    private final ProfileRepository profileRepository;
+    private final IdentityServiceClient identityServiceClient;
 
     @Override
-    public List<Experience> getAllExperiences() {
-        return experienceRepository.findAll();
+    public List<Experience> getAllExperiences(String username) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
+        return experienceRepository.findByUserId(userId);
     }
 
     @Override
@@ -32,12 +32,11 @@ public class ExperienceServiceImpl implements ExperienceService {
     }
 
     @Override
-    public Experience create(ExperienceRequest experienceRequest) {
-        profileRepository.findById(experienceRequest.getProfileId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ với id: "+experienceRequest.getProfileId()));
+    public Experience create(ExperienceRequest experienceRequest, String username) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
 
         Experience newExperience = Experience.builder()
-                    .profileId(experienceRequest.getProfileId())
+                    .userId(userId)
                     .companyName(experienceRequest.getCompanyName())
                     .position(experienceRequest.getPosition())
                     .employmentType(experienceRequest.getEmploymentType())
@@ -54,7 +53,6 @@ public class ExperienceServiceImpl implements ExperienceService {
     public Experience update(ExperienceRequest experienceRequest, String id) {
             Experience existingExperience = getExperienceById(id);
 
-            existingExperience.setProfileId(experienceRequest.getProfileId());
             existingExperience.setCompanyName(experienceRequest.getCompanyName());
             existingExperience.setPosition(experienceRequest.getPosition());
             existingExperience.setEmploymentType(experienceRequest.getEmploymentType());

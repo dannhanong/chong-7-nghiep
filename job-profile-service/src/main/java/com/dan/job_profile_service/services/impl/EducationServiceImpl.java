@@ -2,10 +2,9 @@ package com.dan.job_profile_service.services.impl;
 
 import com.dan.job_profile_service.dtos.requests.EducationRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
+import com.dan.job_profile_service.http_clients.IdentityServiceClient;
 import com.dan.job_profile_service.models.Education;
-import com.dan.job_profile_service.models.Profile;
 import com.dan.job_profile_service.repositories.EducationRepository;
-import com.dan.job_profile_service.repositories.ProfileRepository;
 import com.dan.job_profile_service.services.EducationService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
@@ -17,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EducationServiceImpl implements EducationService {
     private final EducationRepository educationRepository;
-    private final ProfileRepository profileRepository;
+    private final IdentityServiceClient identityServiceClient;
 
     @Override
     public List<Education> getAllEducations() {
@@ -31,12 +30,11 @@ public class EducationServiceImpl implements EducationService {
     }
 
     @Override
-    public Education create(EducationRequest educationRequest) {
-        profileRepository.findById(educationRequest.getProfileId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ với id: "+educationRequest.getProfileId()));
+    public Education create(EducationRequest educationRequest, String username) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
 
         Education education = Education.builder()
-                    .profileId(educationRequest.getProfileId())
+                    .userId(userId)
                     .schoolName(educationRequest.getSchoolName())
                     .degree(educationRequest.getDegree())
                     .major(educationRequest.getMajor())
@@ -53,7 +51,6 @@ public class EducationServiceImpl implements EducationService {
     public Education update(EducationRequest educationRequest, String id) {
             Education existingEducation = getEducationById(id);
 
-            existingEducation.setProfileId(educationRequest.getProfileId());
             existingEducation.setSchoolName(educationRequest.getSchoolName());
             existingEducation.setDegree(educationRequest.getDegree());
             existingEducation.setMajor(educationRequest.getMajor());

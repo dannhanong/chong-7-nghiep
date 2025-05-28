@@ -8,8 +8,6 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.LocalDateTime;
-
 @Document(collection = "skills")
 @Getter
 @Setter
@@ -20,8 +18,7 @@ public class Skill extends BaseEntity{
     @Id
     private String id;
     @Indexed
-    @Field("profile_id")
-    private String profileId;
+    private String userId;
     //ten ky nang
     @Field("skill_name")
     @NotBlank(message = "Tên kỹ năng không được để trống")

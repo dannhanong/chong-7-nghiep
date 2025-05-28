@@ -27,7 +27,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.authorizeHttpRequests(
                 config->config
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
         );
         http.cors(cors -> {
             cors.configurationSource(request -> {

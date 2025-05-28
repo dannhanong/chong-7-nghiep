@@ -3,7 +3,10 @@ package com.dan.job_profile_service.controllers;
 import com.dan.job_profile_service.dtos.requests.ExperienceRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.models.Experience;
+import com.dan.job_profile_service.security.jwt.JwtService;
 import com.dan.job_profile_service.services.ExperienceService;
+
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,15 +18,17 @@ import java.util.List;
 @RequestMapping("/jp/experiences")
 @RequiredArgsConstructor
 public class ExperienceController {
-
+    private final JwtService jwtService;
     private final ExperienceService experienceService;
 
     @PostMapping("/create")
     public ResponseEntity<ResponseMessage> createExperience(
+            HttpServletRequest request,
             @Valid @RequestBody ExperienceRequest experienceRequest
     ) {
         try {
-            experienceService.create(experienceRequest);
+            String username = jwtService.getUsernameFromRequest(request);
+            experienceService.create(experienceRequest, username);
             return ResponseEntity.ok(new ResponseMessage(200, "Thêm kinh nghệm làm việc thành công"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ResponseMessage(500, "Lỗi khi thêm kinh nghiệm: " + e.getMessage()));
@@ -31,8 +36,9 @@ public class ExperienceController {
     }
 
     @GetMapping("")
-    public ResponseEntity<List<Experience>> getAllExperiences() {
-        return ResponseEntity.ok(experienceService.getAllExperiences());
+    public ResponseEntity<List<Experience>> getAllExperiences(HttpServletRequest request) {
+        String username = jwtService.getUsernameFromRequest(request);
+        return ResponseEntity.ok(experienceService.getAllExperiences(username));
     }
 
     @GetMapping("/get/{id}")

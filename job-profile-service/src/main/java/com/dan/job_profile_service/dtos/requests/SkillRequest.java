@@ -12,9 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SkillRequest {
-    String profileId;
     String skillName;
-    ProficiencyType proficiency; //BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
+    ProficiencyType proficiency;
     Double yearsExperience;
     String certifications;
     String description;

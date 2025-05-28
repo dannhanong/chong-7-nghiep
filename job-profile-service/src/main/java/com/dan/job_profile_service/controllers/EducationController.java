@@ -3,7 +3,10 @@ package com.dan.job_profile_service.controllers;
 import com.dan.job_profile_service.dtos.requests.EducationRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.models.Education;
+import com.dan.job_profile_service.security.jwt.JwtService;
 import com.dan.job_profile_service.services.EducationService;
+
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,15 +18,17 @@ import java.util.List;
 @RequestMapping("/jp/educations")
 @RequiredArgsConstructor
 public class EducationController {
-
+    private final JwtService jwtService;
     private final EducationService educationService;
 
     @PostMapping("/create")
     public ResponseEntity<ResponseMessage> createEducation(
+            HttpServletRequest request,
             @Valid @RequestBody EducationRequest educationRequest
     ) {
         try {
-            educationService.create(educationRequest);
+            String username = jwtService.getUsernameFromRequest(request);
+            educationService.create(educationRequest, username);
             return ResponseEntity.ok(new ResponseMessage(200, "Thêm học vấn thành công"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ResponseMessage(500, "Lỗi khi thêm học vấn: " + e.getMessage()));

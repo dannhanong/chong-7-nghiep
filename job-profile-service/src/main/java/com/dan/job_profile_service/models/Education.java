@@ -19,8 +19,7 @@ public class Education extends BaseEntity{
     @Id
     private String id;
     @Indexed
-    @Field("profile_id")
-    private String profileId;
+    private String userId;
     // ten truong
     @Field("school_name")
     @NotBlank(message = "Tên trường không được để trống")
