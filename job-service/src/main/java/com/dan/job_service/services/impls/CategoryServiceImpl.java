@@ -96,16 +96,31 @@ public class CategoryServiceImpl implements CategoryService {
             .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại"));
     }
 
+    @Override
+    public List<CategoryResponse> getCategoriesByParentId(String parentId) {
+        categoryRepository.findById(parentId)
+            .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
+        
+        return categoryRepository.findByParentId(parentId)
+            .stream()
+            .map(this::fromCategoryToCategoryResponse)
+            .toList();
+    }
+
+
     private CategoryResponse fromCategoryToCategoryResponse(Category category) {
         String parentId = category.getParentId();
-        Category pCategory = categoryRepository.findById(parentId)
-                .orElse(null);
+        Category pCategory = null;
+        if (parentId != null) {
+            pCategory = categoryRepository.findById(parentId)
+                    .orElse(null);
+        }
 
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
-                .parent(fromCategoryToCategoryResponse(pCategory))
+                .parent(pCategory != null ? fromCategoryToCategoryResponse(pCategory) : null)
                 .totalJob(jobRepository.countByCategoryId(category.getId()))
                 .build();
     }

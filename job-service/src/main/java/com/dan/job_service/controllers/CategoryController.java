@@ -41,6 +41,15 @@ public class CategoryController {
         }
     }
 
+    @GetMapping("/public/get-by-parentId/{id}")
+    public ResponseEntity<?> getCategoriesByParentId(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(categoryService.getCategoriesByParentId(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin danh mục: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/public/get-all")
     public ResponseEntity<Page<CategoryResponse>> getAllCategories(
             @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,

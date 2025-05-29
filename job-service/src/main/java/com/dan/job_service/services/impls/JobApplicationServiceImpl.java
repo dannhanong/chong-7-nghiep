@@ -55,6 +55,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             .build();
     }
 
+
     @Override
     public Page<JobApplication> getJobApplicationByUserId(String userId, String username, Pageable pageable) {
         return null;
