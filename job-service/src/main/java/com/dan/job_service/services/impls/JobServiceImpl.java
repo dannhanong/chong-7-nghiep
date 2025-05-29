@@ -1,7 +1,10 @@
 package com.dan.job_service.services.impls;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import com.dan.job_service.dtos.responses.JobsLast24HoursResponse;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -76,42 +79,35 @@ public class JobServiceImpl implements JobService{
     }
 
     @Override
+    @Transactional
     public ResponseMessage update(String id, JobRequest jobRequest, String username) {
-        // Job job = jobRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
-        // Category category = categoryRepository
-        //     .findById(jobRequest.getCategoryId())
-        //     .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
-        // String userId = identityServiceClient.getUserByUsername(username).get("id");
-        // Company company = companyRepository
-        //     .findByUserId(userId)
-        //     .orElseThrow(() -> new RuntimeException("Không tìm thấy công ty"));
-        // if (userId == null) {
-        //     throw new RuntimeException("Không tìm thấy người dùng");
-        // }
-        // if (!company.getUserId().equals(userId)) {
-        //     throw new RuntimeException("Bạn không phải là người tạo công ty");
-        // }
-        // if (jobRequest.getSalaryMin() > jobRequest.getSalaryMax()) {
-        //     throw new RuntimeException("Lương tối thiểu không được lớn hơn lương tối đa");
-        // }
-        
-        // job.setCategoryId(category.getId());
-        // job.setTitle(jobRequest.getTitle());
-        // job.setDescription(jobRequest.getDescription());
-        // job.setSalaryMin(jobRequest.getSalaryMin());
-        // job.setSalaryMax(jobRequest.getSalaryMax());
-        // job.setExperienceLevel(jobRequest.getExperienceLevel());
-        // job.setBenefits(jobRequest.getBenefits());
-        // job.setApplicationDeadline(jobRequest.getApplicationDeadline());
-        // job.setContentUri(jobRequest.getContentUri());
-        // job.setUpdatedAt(java.time.LocalDateTime.now());
+         Job existingJob = jobRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+         Category category = categoryRepository
+             .findById(jobRequest.categoryId())
+             .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
+         String userId = identityServiceClient.getUserByUsername(username).getId();
 
-        // jobRepository.save(job);
+         if (jobRequest.salaryMin() > jobRequest.salaryMax()) {
+             throw new RuntimeException("Lương tối thiểu không được lớn hơn lương tối đa");
+         }
+
+         existingJob.setCategoryId(category.getId());
+         existingJob.setTitle(jobRequest.title());
+         existingJob.setDescription(jobRequest.description());
+         existingJob.setSalaryMin(jobRequest.salaryMin());
+         existingJob.setSalaryMax(jobRequest.salaryMax());
+         existingJob.setExperienceLevel(jobRequest.experienceLevel());
+         existingJob.setBenefits(jobRequest.benefits());
+         existingJob.setApplicationDeadline(jobRequest.applicationDeadline());
+         existingJob.setContentUri(jobRequest.contentUri());
+         existingJob.setUpdatedAt(java.time.LocalDateTime.now());
+         jobRepository.save(existingJob);
         
         return new ResponseMessage(200, "Cập nhật công việc thành công");
     }
 
     @Override
+    @Transactional
     public ResponseMessage delete(String id, String username) {
         Job job = jobRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
         UserDetailToCreateJob userDetailToCreateJob = identityServiceClient.getUserByUsername(username);
@@ -125,6 +121,7 @@ public class JobServiceImpl implements JobService{
         job.setDeletedAt(java.time.LocalDateTime.now());
         
         jobRepository.save(job);
+
         
         return new ResponseMessage(200, "Xóa công việc thành công");    
     }
@@ -142,12 +139,24 @@ public class JobServiceImpl implements JobService{
         }
         return fromJobToJobDetail(job);
     }
-    
+
+    @Override
+    public List<JobsLast24HoursResponse> getJobsPostedLast24Hours() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime yesterday = now.minusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime today = now.withHour(0).withMinute(0).withSecond(0).withNano(0);
+
+        List<Job> jobs = jobRepository.findByCreatedAtBetweenAndActiveTrue(yesterday, today);
+        return jobs.stream()
+                .map(JobsLast24HoursResponse::fromJobToJobLast24Hours)
+                .collect(Collectors.toList());
+    }
+
     private JobDetail fromJobToJobDetail(Job job) {
         String userName = null;
         if (job.getUserId() != null) {
             UserDetailToCreateJob user = identityServiceClient.getUserById(job.getUserId());
-            userName = user != null ? user.getName() : null;
+            userName = user != null ? user.getName() : "Không xác định";
         }
         return JobDetail.builder()
             .id(job.getId())
