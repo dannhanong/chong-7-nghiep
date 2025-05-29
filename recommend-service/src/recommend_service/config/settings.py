@@ -14,8 +14,11 @@ class Settings(BaseSettings):
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://root:123456@103.216.117.244:27017")
     MONGODB_JOB_DATABASE: str = os.getenv("MONGODB_JOB_DATABASE", "jobs_job")
     MONGODB_JOBS_COLLECTION: str = os.getenv("MONGODB_JOBS_COLLECTION", "jobs")
-    MONGODB_USER_DATABASE: str = os.getenv("MONGODB_USER_DATABASE", "jobs_auth")
+    MONGODB_USER_DATABASE: str = os.getenv("MONGODB_USER_DATABASE", "links_auth")
     MONGODB_USERS_COLLECTION: str = os.getenv("MONGODB_USERS_COLLECTION", "users")
+    MONGODB_JOB_PROFILE_DATABASE: str = os.getenv("MONGODB_JOB_PROFILE_DATABASE")
+    MONGODB_JOB_PROFILE_SKILL_COLLECTION: str =  os.getenv("MONGODB_JOB_PROFILE_SKILL_COLLECTION")
+    MONGODB_JOB_PROFILE_EXPERIENCE_COLLECTION: str = os.getenv("MONGODB_JOB_PROFILE_EXPERIENCE_COLLECTION")
 
     # Cài đặt cho hệ thống gợi ý
     RECOMMENDATION_LIMIT: int = int(os.getenv("RECOMMENDATION_LIMIT", "10"))

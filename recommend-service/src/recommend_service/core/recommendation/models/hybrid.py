@@ -7,7 +7,9 @@ from recommend_service.core.recommendation.models.content_based import ContentBa
 from recommend_service.core.recommendation.models.collaborative import CollaborativeRecommender
 import logging
 from typing import Dict, List, Any, Optional
-from recommend_service.utils.user_utils import get_user_id_from_username
+from recommend_service.utils.user_utils import get_user_id_from_username, get_email_from_username
+from recommend_service.config.settings import settings
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +157,7 @@ class HybridRecommender:
                 logger.error(f"Invalid job_id format: {e}")
                 return self._create_empty_page_result(page, size, error="Invalid job_id format")
 
-            jobs_collection = self.db.get_collection("jobs_job", "jobs")
+            jobs_collection = self.db.get_collection(settings.MONGODB_JOB_DATABASE, settings.MONGODB_JOBS_COLLECTION)
             job = jobs_collection.find_one({"_id": object_job_id})
 
             if not job:
@@ -239,28 +241,29 @@ class HybridRecommender:
         try:
             print(f"Building profile for user_id: {user_id}")
             # Lấy thông tin kỹ năng
-            skills_collection = self.db.get_collection("jobs_auth", "skills")
+            skills_collection = self.db.get_collection(settings.MONGODB_JOB_PROFILE_DATABASE, settings.MONGODB_JOB_PROFILE_SKILL_COLLECTION)
+
+            if skills_collection is None:
+                logger.error(f"Skills collection not found in database: {settings.MONGODB_JOB_PROFILE_DATABASE}.{settings.MONGODB_JOB_PROFILE_SKILL_COLLECTION}")
+                return {}
+
             skills = list(skills_collection.find({"userId": user_id, "deletedAt": None}))
             
             # Lấy thông tin kinh nghiệm làm việc
-            experiences_collection = self.db.get_collection("jobs_auth", "experiences")
+            experiences_collection = self.db.get_collection(settings.MONGODB_JOB_PROFILE_DATABASE, settings.MONGODB_JOB_PROFILE_EXPERIENCE_COLLECTION)
             experiences = list(experiences_collection.find({"userId": user_id, "deletedAt": None}))
-            
-            # Lấy thông tin học vấn
-            educations_collection = self.db.get_collection("jobs_auth", "educations")
-            educations = list(educations_collection.find({"userId": user_id, "deletedAt": None}))
-            
+
+            print(f"Found {len(skills)} skills and {len(experiences)} experiences for user_id: {user_id}")
+                        
             # Tổng hợp thông tin
-            skill_names = [skill['name'] for skill in skills]
-            job_titles = [exp['companyName'] for exp in experiences]
-            education = [f"{edu['degree']} {edu['fieldOfStudy']} {edu['school']}" for edu in educations]
+            skill_names = [skill['skill_name'] for skill in skills]
+            job_titles = [exp['company_name'] for exp in experiences]
             
             return {
                 'skills': ' '.join(skill_names),
                 'job_titles': ' '.join(job_titles),
-                'education': ' '.join(education),
                 'experience': ' '.join([exp.get('description', '') for exp in experiences if 'description' in exp]),
-                'skill_level': {skill['name']: skill['level'] for skill in skills if 'level' in skill}
+                'skill_level': {skill['skill_name']: skill['years_experience'] for skill in skills if 'years_experience' in skill}
             }
         except Exception as e:
             logger.error(f"Error building user profile: {e}")
@@ -376,13 +379,12 @@ class HybridRecommender:
         """
         if not recommendations:
             return []
-            
         try:
             # Lấy thông tin chi tiết từ database
-            jobs_collection = self.db.get_collection("jobs_job", "jobs")
+            jobs_collection = self.db.get_collection(settings.MONGODB_JOB_DATABASE, settings.MONGODB_JOBS_COLLECTION)
             job_ids = [ObjectId(job_id) if not isinstance(job_id, ObjectId) else job_id 
                     for job_id in recommendations.keys()]
-            
+                        
             jobs = list(jobs_collection.find({
                 "_id": {"$in": job_ids},
                 "active": True,
@@ -398,6 +400,7 @@ class HybridRecommender:
                 
                 # Thêm điểm đề xuất (dùng str(job['_id']) để so sánh với key trong recommendations)
                 original_id = str(job['_id'])
+
                 job_dict['recommendation_score'] = recommendations.get(original_id, 0)
                 
                 serialized_jobs.append(job_dict)
@@ -514,10 +517,17 @@ class HybridRecommender:
         """
         recommend_jobs_to_send = {}
         for username in list_user_username:
-            recommend_jobs_to_send[username] = self.recommend_jobs(
+            all_jobs = self.recommend_jobs(
                 username=username,
                 filters=None,
                 page=0,
                 size=40
             ).get("content", [])
+
+            filtered_jobs = [job for job in all_jobs
+                             if job.get('recommendation_score', 0) >= 0.25]
+            
+            filtered_job_ids = {str(job['_id']) for job in filtered_jobs}
+
+            recommend_jobs_to_send[get_email_from_username(username)] = filtered_job_ids
         return recommend_jobs_to_send

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
 from recommend_service.core.recommendation.models.content_based import ContentBasedRecommender
 from recommend_service.utils.user_utils import get_user_id_from_username
+from recommend_service.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -329,17 +330,17 @@ class CollaborativeRecommender:
     def _has_user_profile(self, user_id: str) -> bool:
         """Kiểm tra xem user có profile hay không"""
         try:
-            users_collection = self.db.get_collection("jobs_auth", "users")
+            users_collection = self.db.get_collection(settings.MONGODB_USER_DATABASE, settings.MONGODB_USERS_COLLECTION)
             user = users_collection.find_one({"_id": user_id})
             
             if not user:
                 return False
                 
             # Kiểm tra xem có đủ thông tin profile không
-            skills_collection = self.db.get_collection("jobs_auth", "skills")
+            skills_collection = self.db.get_collection(settings.MONGODB_JOB_PROFILE_DATABASE, settings.MONGODB_JOB_PROFILE_SKILL_COLLECTION)
             skills_count = skills_collection.count_documents({"userId": user_id})
 
-            experiences_collection = self.db.get_collection("jobs_auth", "experiences")
+            experiences_collection = self.db.get_collection(settings.MONGODB_JOB_PROFILE_DATABASE, settings.MONGODB_JOB_PROFILE_EXPERIENCE_COLLECTION)
             experiences_count = experiences_collection.count_documents({"userId": user_id})
             
             # Có ít nhất skill hoặc experience
@@ -420,7 +421,7 @@ class CollaborativeRecommender:
             Dictionary {job_id: recency_score}
         """
         try:
-            jobs_collection = self.db.get_collection("jobs_job", "jobs")
+            jobs_collection = self.db.get_collection(settings.MONGODB_JOB_DATABASE, settings.MONGODB_JOBS_COLLECTION)
 
             recent_jobs = list(jobs_collection.find(
                 {"active": True, "status": True, "deletedAt": None},
