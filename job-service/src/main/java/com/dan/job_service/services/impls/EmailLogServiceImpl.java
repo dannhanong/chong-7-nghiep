@@ -17,9 +17,9 @@ public class EmailLogServiceImpl implements EmailLogService {
     private final EmailLogRepository emailLogRepository;
 
     @Override
-    public EmailLog saveEmailLog(String username, String jobId) {
+    public EmailLog saveEmailLog(String email, String jobId) {
         EmailLog emailLog = EmailLog.builder()
-                .username(username)
+                .email(email)
                 .jobId(jobId)
                 .sentAt(LocalDateTime.now())
                 .build();
@@ -27,9 +27,9 @@ public class EmailLogServiceImpl implements EmailLogService {
     }
 
     @Override
-    public List<String> filterUnsentJobs(String username, List<String> jobIds) {
+    public List<String> filterUnsentJobs(String email, List<String> jobIds) {
         // Lấy danh sách job đã gửi cho user này
-        List<EmailLog> sentEmails = emailLogRepository.findByUsername(username);
+        List<EmailLog> sentEmails = emailLogRepository.findByEmail(email);
 
         // Lấy danh sách jobId đã gửi
         Set<String> sentJobIds = sentEmails.stream()

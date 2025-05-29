@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class EmailLog {
-    String username;
+    String email;
     String jobId;
     @CreatedDate
     LocalDateTime sentAt;

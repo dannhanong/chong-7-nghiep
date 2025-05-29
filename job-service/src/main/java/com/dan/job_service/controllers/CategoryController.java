@@ -1,10 +1,13 @@
 package com.dan.job_service.controllers;
 
 import com.dan.job_service.dtos.requets.CategoryRequest;
+import com.dan.job_service.dtos.responses.CategoryResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.services.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,5 +39,13 @@ public class CategoryController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin danh mục: " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/public/get-all")
+    public ResponseEntity<Page<CategoryResponse>> getAllCategories(
+            @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        return ResponseEntity.ok(categoryService.getAllCategories(keyword, PageRequest.of(page, size)));
     }
 }

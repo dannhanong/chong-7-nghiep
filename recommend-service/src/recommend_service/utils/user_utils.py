@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 from recommend_service.db.mongodb import MongoDB
+from recommend_service.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ def get_user_id_from_username(username: str) -> Optional[str]:
     
     try:
         db = MongoDB()
-        users_collection = db.get_collection("jobs_auth", "users")
+        users_collection = db.get_collection(settings.MONGODB_USER_DATABASE, settings.MONGODB_USERS_COLLECTION)
         user = users_collection.find_one({"username": username})
 
         if user:
@@ -54,7 +55,7 @@ def get_username_from_user_id(user_id: str) -> Optional[str]:
         
     try:
         db = MongoDB()
-        users_collection = db.get_collection("jobs_auth", "users")
+        users_collection = db.get_collection(settings.MONGODB_USER_DATABASE, settings.MONGODB_USERS_COLLECTION)
         user = users_collection.find_one({"_id": user_id})
         
         if user:
@@ -65,6 +66,34 @@ def get_username_from_user_id(user_id: str) -> Optional[str]:
         
     except Exception as e:
         logger.error(f"Error getting username from user_id: {e}")
+        return None
+    
+def get_email_from_username(username: str) -> Optional[str]:
+    """
+    Lấy email từ username
+    
+    Args:
+        username: Tên người dùng cần tìm
+        
+    Returns:
+        Email nếu tìm thấy, None nếu không tìm thấy
+    """
+    if not username:
+        return None
+    
+    try:
+        db = MongoDB()
+        users_collection = db.get_collection(settings.MONGODB_USER_DATABASE, settings.MONGODB_USERS_COLLECTION)
+        user = users_collection.find_one({"username": username})
+
+        if user:
+            return user.get("email")
+        
+        logger.warning(f"User with username '{username}' not found in database.")
+        return None
+    
+    except Exception as e:
+        logger.error(f"Error retrieving email for username '{username}': {e}")
         return None
 
 def clear_username_cache():
@@ -80,10 +109,10 @@ def get_all_usernames() -> list[str]:
     """
     try:
         db = MongoDB()
-        users_collection = db.get_collection("jobs_auth", "users")
-        users = users_collection.find({}, {"username": 1, "providerType": 1})
+        users_collection = db.get_collection(settings.MONGODB_USER_DATABASE, settings.MONGODB_USERS_COLLECTION)
+        users = users_collection.find({}, {"username": 1})
 
-        return [user["username"] for user in users if "username" in user and user.get("providerType") == "LOCAL"]
+        return [user["username"] for user in users if "username" in user]
         
     except Exception as e:
         logger.error(f"Error retrieving all usernames: {e}")

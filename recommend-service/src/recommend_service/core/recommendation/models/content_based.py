@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 import hashlib
 from recommend_service.utils.user_utils import get_user_id_from_username
+from recommend_service.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ class ContentBasedRecommender:
                     # Tiếp tục xây dựng mô hình mới nếu cache lỗi
             
             # Code để lấy dữ liệu từ MongoDB
-            jobs_collection = self.db.get_collection("jobs_job", "jobs")
+            jobs_collection = self.db.get_collection(settings.MONGODB_JOB_DATABASE, settings.MONGODB_JOBS_COLLECTION)
             jobs_data = list(jobs_collection.find({}))
 
             logger.info(f"Total jobs fetched from database: {len(jobs_data)}")
