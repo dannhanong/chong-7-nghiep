@@ -55,11 +55,18 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             .build();
     }
 
-
-    @Override
-    public Page<JobApplication> getJobApplicationByUserId(String userId, String username, Pageable pageable) {
-        return null;
+   @Override
+public Page<JobApplication> getJobApplicationByUserId(String username, Pageable pageable) {
+    try {
+        UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+        if (user == null || user.getId() == null) {
+            throw new RuntimeException("Không tìm thấy thông tin người dùng");
+        }
+        return jobApplicationRepository.findByUserId(user.getId(), pageable);
+    } catch (Exception e) {
+        throw new RuntimeException("Lỗi khi lấy danh sách đơn ứng tuyển: " + e.getMessage());
     }
+}
 
     @Override
     public Page<JobApplication> getJobApplicationByJobId(String jobId, String username, Pageable pageable) {
@@ -73,4 +80,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
         return jobApplicationRepository.findByJobId(jobId, pageable);
     }
+
+    
 }
