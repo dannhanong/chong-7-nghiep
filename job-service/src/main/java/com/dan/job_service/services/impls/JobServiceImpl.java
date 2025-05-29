@@ -72,8 +72,6 @@ public class JobServiceImpl implements JobService{
             .createdAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
             .build());
-
-        kafkaTemplate.send("job_minus_job_count", userId);
                 
         return new ResponseMessage(200, "Tạo công việc thành công");
     }
@@ -85,7 +83,7 @@ public class JobServiceImpl implements JobService{
          Category category = categoryRepository
              .findById(jobRequest.categoryId())
              .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục"));
-         String userId = identityServiceClient.getUserByUsername(username).getId();
+        //  String userId = identityServiceClient.getUserByUsername(username).getId();
 
          if (jobRequest.salaryMin() > jobRequest.salaryMax()) {
              throw new RuntimeException("Lương tối thiểu không được lớn hơn lương tối đa");
@@ -118,10 +116,9 @@ public class JobServiceImpl implements JobService{
         }
         
         job.setActive(false);
-        job.setDeletedAt(java.time.LocalDateTime.now());
+        job.setDeletedAt(LocalDateTime.now());
         
         jobRepository.save(job);
-
         
         return new ResponseMessage(200, "Xóa công việc thành công");    
     }

@@ -1,7 +1,6 @@
 package com.dan.job_service.controllers;
 
 import com.dan.job_service.dtos.responses.JobsLast24HoursResponse;
-import com.dan.job_service.models.Job;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,18 +56,18 @@ public class JobController {
         }
     }
 
-    @PutMapping("/public/update/{id}")
+    @PutMapping("/private/update/{id}")
     public ResponseEntity<?> updateJob(@PathVariable String id, @Valid @RequestBody JobRequest jobRequest, HttpServletRequest request) {
         try{
             String username = jwtService.getUsernameFromRequest(request);
             jobService.update(id, jobRequest, username);
             return ResponseEntity.ok(new ResponseMessage(200, "Cập nhật công việc thành công"));
         }catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi khi xóa công việc: "+e.getMessage()));
+            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi khi cập nhật công việc: "+e.getMessage()));
         }
     }
 
-    @DeleteMapping("/public/{id}")
+    @DeleteMapping("/private/{id}")
     public ResponseEntity<?> deleteJobById(@PathVariable String id, HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);

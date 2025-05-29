@@ -10,5 +10,5 @@ import java.util.List;
 public interface EmailLogRepository extends MongoRepository<EmailLog, String> {
     EmailLog findByJobId(String jobId);
 
-    List<EmailLog> findByUsername(String username);
+    List<EmailLog> findByEmail(String email);
 }
