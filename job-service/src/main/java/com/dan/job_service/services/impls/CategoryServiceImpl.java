@@ -10,6 +10,8 @@ import com.dan.job_service.services.CategoryService;
 
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -114,5 +116,11 @@ public class CategoryServiceImpl implements CategoryService {
             childCategory.setDeletedAt(LocalDateTime.now());
             categoryRepository.save(childCategory);
         });
+    }
+
+    @Override
+    public Page<CategoryResponse> getAllCategories(String keyword, Pageable pageable) {
+        return categoryRepository.findAllByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword, pageable)
+            .map(this::fromCategoryToCategoryResponse);
     }
 }

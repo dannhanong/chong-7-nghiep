@@ -529,5 +529,5 @@ class HybridRecommender:
             
             filtered_job_ids = {str(job['_id']) for job in filtered_jobs}
 
-            recommend_jobs_to_send[get_email_from_username(username)] = filtered_job_ids
+            recommend_jobs_to_send[get_email_from_username(username)] = filtered_job_ids if filtered_job_ids else None
         return recommend_jobs_to_send
