@@ -38,7 +38,7 @@ public class Job {
 
     @NotBlank(message = "Danh mục không được để trống")
     String categoryId;
-
+    String shortDescription;
     @NotBlank(message = "Tiêu đề không được để trống")
     String title;
     String description;
