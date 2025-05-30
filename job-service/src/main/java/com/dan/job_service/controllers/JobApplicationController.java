@@ -27,7 +27,7 @@ public class JobApplicationController {
     private final JwtService jwtService;
     private final UserInteractionRepository userInteractionRepository;
 
-    @PostMapping("/public/apply/{jobId}")
+    @PostMapping("/private/apply/{jobId}")
     public ResponseEntity<ResponseMessage> applyJob(
             @PathVariable String jobId,
             @RequestBody JobApplicationRequest jobApplicationRequest,
@@ -43,20 +43,20 @@ public class JobApplicationController {
 
     // Lấy danh sách đơn ứng tuyển của người dùng     public Page<JobApplication> getJobApplicationByUserId(String userId, String username, Pageable pageable) {
 
-    @GetMapping("/public/list-application")
-public ResponseEntity<Page<JobApplication>> getApplications(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        HttpServletRequest request
-) {
-    try {
-        String username = jwtService.getUsernameFromRequest(request);
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(jobApplicationService.getJobApplicationByUserId(username, pageable));
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
+    @GetMapping("/private/list-application")
+    public ResponseEntity<Page<JobApplication>> getApplications(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request
+    ) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            Pageable pageable = PageRequest.of(page, size);
+            return ResponseEntity.ok(jobApplicationService.getJobApplicationByUserId(username, pageable));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
+        }
     }
-}
 
     @GetMapping("/public/list-application/{jobId}")
     public ResponseEntity<Page<JobApplication>> getApplications(
