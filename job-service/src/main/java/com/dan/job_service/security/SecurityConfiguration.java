@@ -36,7 +36,6 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PUT, Endpoints.RECRUITER_PUT_ENDPOINTS).hasAuthority("SELLER")
                         .requestMatchers(HttpMethod.DELETE, Endpoints.RECRUITER_DELETE_ENDPOINTS).hasAuthority("SELLER")
                         .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.POST, Endpoints.PRIVATE_POST_ENDPOINTS).authenticated()
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
         );

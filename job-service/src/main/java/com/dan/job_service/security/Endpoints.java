@@ -9,12 +9,6 @@ public class Endpoints {
                 BASE_COMPANY_URL + "/public/**"
         };
 
-        public static final String[] PRIVATE_POST_ENDPOINTS = {
-                BASE_JOB_URL + "/private/create",
-                BASE_JOB_URL + "/private/update/**",
-                BASE_JOB_URL + "/private/delete/**",
-        };
-
         public static final String[] ADMIN_GET_ENDPOINTS = {
         };
 

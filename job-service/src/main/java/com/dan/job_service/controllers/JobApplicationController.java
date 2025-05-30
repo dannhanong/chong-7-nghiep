@@ -61,7 +61,7 @@ public class JobApplicationController {
         }
     }
 
-    @GetMapping("/public/list-application/{jobId}")
+    @GetMapping("/private/list-application/{jobId}")
     public ResponseEntity<Page<JobApplication>> getApplications(
             @PathVariable String jobId,
             @RequestParam(defaultValue = "0") int page,
@@ -73,7 +73,7 @@ public class JobApplicationController {
         return ResponseEntity.ok(jobApplicationService.getJobApplicationByJobId(jobId, username, pageable));
     }
 
-    @PostMapping("/public/status/{id}")
+    @PutMapping("/private/status/{id}")
     public ResponseEntity<ResponseMessage> updateStatus(
             @PathVariable String id, 
             @RequestBody UpdateStatusRequest updateStatusRequest) {
