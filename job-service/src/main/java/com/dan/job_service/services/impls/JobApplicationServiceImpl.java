@@ -11,6 +11,7 @@ import com.dan.job_service.repositories.JobApplicationRepository;
 import com.dan.job_service.repositories.JobRepository;
 import com.dan.job_service.services.JobApplicationService;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -55,7 +56,28 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             .build();
     }
 
-   @Override
+
+    @Override
+    public ResponseMessage updateStatus(String id, String status) {
+        if (status == null) {
+            throw new IllegalArgumentException("Trạng thái không được để trống");
+        }
+
+        JobApplication jobApplication = jobApplicationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn ứng tuyển với id: " + id));
+
+        jobApplication.setStatus(ApplicationStatus.valueOf(status));
+        jobApplication.setUpdatedAt(LocalDateTime.now());
+        
+        jobApplicationRepository.save(jobApplication);
+        
+        return ResponseMessage.builder()
+                .status(200)
+                .message("Cập nhật trạng thái đơn ứng tuyển thành công")
+                .build();
+    }
+
+    @Override
 public Page<JobApplication> getJobApplicationByUserId(String username, Pageable pageable) {
     try {
         UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);

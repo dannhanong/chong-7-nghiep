@@ -1,6 +1,5 @@
 package com.dan.job_service.models;
 
-import com.dan.job_service.dtos.enums.Status;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.CreatedDate;
