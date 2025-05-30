@@ -1,6 +1,8 @@
 package com.dan.job_service.controllers;
 
+import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
+import com.dan.job_service.dtos.requets.UpdateStatusRequest;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.models.JobApplication;
 import com.dan.job_service.repositories.UserInteractionRepository;
@@ -11,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Collections;
 
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -68,5 +71,17 @@ public ResponseEntity<Page<JobApplication>> getApplications(
         String username = jwtService.getUsernameFromRequest(request);
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(jobApplicationService.getJobApplicationByJobId(jobId, username, pageable));
+    }
+
+    @PostMapping("/public/status/{id}")
+    public ResponseEntity<ResponseMessage> updateStatus(
+            @PathVariable String id, 
+            @RequestBody UpdateStatusRequest updateStatusRequest) {
+        try {
+            jobApplicationService.updateStatus(id, updateStatusRequest.status());
+            return ResponseEntity.ok(new ResponseMessage(200, "Cập nhật trạng thái đơn ứng tuyển thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ResponseMessage(400, "Lỗi khi cập nhật trạng thái đơn ứng tuyển: " + e.getMessage()));
+        }
     }
 }
