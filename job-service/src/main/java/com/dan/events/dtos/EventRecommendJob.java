@@ -13,8 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class EventRecommendJobNotification {
+public class EventRecommendJob {
     String recipient;
     String subject;
-    List<JobsLast24HoursResponse> jobs;
+    String body;
 }
