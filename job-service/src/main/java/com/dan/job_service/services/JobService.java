@@ -4,6 +4,8 @@ import com.dan.job_service.dtos.requets.JobRequest;
 import com.dan.job_service.dtos.responses.JobDetail;
 import com.dan.job_service.dtos.responses.JobsLast24HoursResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
+import com.dan.job_service.models.Job;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -13,4 +15,5 @@ public interface JobService {
     ResponseMessage delete(String id, String username);
     JobDetail getJobById(String id, String username);
     List<JobsLast24HoursResponse> getJobsPostedLast24Hours();
+    List<Job> getAll();
 }

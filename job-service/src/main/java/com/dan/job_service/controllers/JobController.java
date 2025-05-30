@@ -77,4 +77,14 @@ public class JobController {
             return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi khi xóa công việc: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/private/get-all-jobs")
+    public ResponseEntity<?> getAllJobsByAdmin(){
+        return ResponseEntity.ok(jobService.getAll());
+    }
+
+    @GetMapping("/public/get-all-jobs")
+    public ResponseEntity<?> getAllJobsByUser(){
+        return ResponseEntity.ok(jobService.getAll());
+    }
 }
