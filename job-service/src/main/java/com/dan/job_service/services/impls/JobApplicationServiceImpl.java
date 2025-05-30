@@ -2,6 +2,7 @@ package com.dan.job_service.services.impls;
 
 import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
+import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
 import com.dan.job_service.http_clients.IdentityServiceClient;
@@ -101,6 +102,52 @@ public Page<JobApplication> getJobApplicationByUserId(String username, Pageable 
         }
 
         return jobApplicationRepository.findByJobId(jobId, pageable);
+    }
+
+    @Override
+    public Page<JobApplicationWithJobResponse> getJobApplicationsWithJobByUserId(String username, ApplicationStatus status, Pageable pageable) {
+        UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+        if (user == null || user.getId() == null) {
+            throw new RuntimeException("Không tìm thấy thông tin người dùng");
+        }
+        Page<JobApplication> applications;
+        if (status != null) {
+            applications = jobApplicationRepository.findByUserIdAndStatus(user.getId(), status, pageable);
+        } else {
+            applications = jobApplicationRepository.findByUserId(user.getId(), pageable);
+        }
+        return applications.map(application -> {
+            Job job = jobRepository.findById(application.getJobId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc với ID: " + application.getJobId()));
+            return JobApplicationWithJobResponse.builder()
+                    .applicationId(application.getId())
+                    .userId(application.getUserId())
+                    .jobId(application.getJobId())
+                    .status(application.getStatus())
+                    .offerSalary(application.getOfferSalary())
+                    .offerPlan(application.getOfferPlan())
+                    .offerSkill(application.getOfferSkill())
+                    .appliedAt(application.getAppliedAt())
+                    .updatedAt(application.getUpdatedAt())
+                    .jobTitle(job.getTitle())
+                    .categoryId(job.getCategoryId())
+                    .shortDescription(job.getShortDescription())
+                    .description(job.getDescription())
+                    .salaryMin(job.getSalaryMin())
+                    .salaryMax(job.getSalaryMax())
+                    .experienceLevel(job.getExperienceLevel())
+                    .benefits(job.getBenefits())
+                    .requirements(job.getRequirements())
+                    .skills(job.getSkills())
+                    .applicationDeadline(job.getApplicationDeadline())
+                    .jobStatus(job.getStatus())
+                    .active(job.getActive())
+                    .workingType(job.getWorkingType())
+                    .workingForm(job.getWorkingForm())
+                    .jobCreatedAt(job.getCreatedAt())
+                    .jobUpdatedAt(job.getUpdatedAt())
+                    .build();
+        });
     }
 
     

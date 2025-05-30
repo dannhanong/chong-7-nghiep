@@ -3,6 +3,7 @@ package com.dan.job_service.controllers;
 import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.requets.UpdateStatusRequest;
+import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.models.JobApplication;
 import com.dan.job_service.repositories.UserInteractionRepository;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,17 +47,21 @@ public class JobApplicationController {
     }
 
     // Lấy danh sách đơn ứng tuyển của người dùng     public Page<JobApplication> getJobApplicationByUserId(String userId, String username, Pageable pageable) {
-
-    @GetMapping("/private/list-application")
-    public ResponseEntity<Page<JobApplication>> getApplications(
+@GetMapping("/private/list-application")
+    public ResponseEntity<Page<JobApplicationWithJobResponse>> getApplications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) ApplicationStatus status, // Thêm tham số status
             HttpServletRequest request
     ) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
+            if (username == null || username.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
+            }
             Pageable pageable = PageRequest.of(page, size);
-            return ResponseEntity.ok(jobApplicationService.getJobApplicationByUserId(username, pageable));
+            return ResponseEntity.ok(jobApplicationService.getJobApplicationsWithJobByUserId(username, status, pageable));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
         }
