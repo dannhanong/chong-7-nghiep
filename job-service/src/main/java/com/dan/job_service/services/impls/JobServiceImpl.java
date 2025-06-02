@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import com.dan.job_service.dtos.responses.JobsLast24HoursResponse;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -147,6 +148,11 @@ public class JobServiceImpl implements JobService{
         return jobs.stream()
                 .map(JobsLast24HoursResponse::fromJobToJobLast24Hours)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Job> getAll() {
+        return jobRepository.findAll();
     }
 
     private JobDetail fromJobToJobDetail(Job job) {
