@@ -45,6 +45,7 @@ public class JobApplicationController {
         }
     }
 
+    // Lấy danh sách đơn ứng tuyển của người dùng   
     @GetMapping("/private/list-application")
     public ResponseEntity<Page<JobApplicationResponse>> getApplications(
             @RequestParam(defaultValue = "0") int page,

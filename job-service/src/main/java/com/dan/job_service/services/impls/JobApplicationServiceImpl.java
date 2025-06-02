@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -118,37 +119,42 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
     }
 
-    @Override
-    public Page<JobApplicationResponse> getJobApplicationByJobId(String jobId, String username, Pageable pageable) {
-        String userId = identityServiceClient.getUserByUsername(username).getId();
-        Job job = jobRepository.findById(jobId)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+        @Override
+        public Page<JobApplicationResponse> getJobApplicationByJobId(String jobId, String username, Pageable pageable) {
+            String userId = identityServiceClient.getUserByUsername(username).getId();
+            Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
 
-        if (!job.getUserId().equals(userId)) {
-            throw new RuntimeException("Bạn không có quyền xem đơn ứng tuyển");
-        }
+            if (!job.getUserId().equals(userId)) {
+                throw new RuntimeException("Bạn không có quyền xem đơn ứng tuyển");
+            }
 
-        Page<JobApplication> jobApplications = jobApplicationRepository.findByJobId(jobId, pageable);
-        
-        List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
-            .map(application -> {
-                UserDetailToCreateJob user = identityServiceClient.getUserById(application.getUserId());
-                return JobApplicationResponse.builder()
-                    .id(application.getId())
-                    .userId(application.getUserId())
-                    .jobId(application.getJobId())
-                    .userName(user.getName())
-                    .title(job.getTitle())
-                    .status(application.getStatus())
-                    .offerSalary(application.getOfferSalary())
-                    .offerPlan(application.getOfferPlan())
-                    .offerSkill(application.getOfferSkill())
-                    .appliedAt(application.getAppliedAt())
-                    .updatedAt(application.getUpdatedAt())
-                    .build();
-            })
-            .collect(Collectors.toList());
+            Page<JobApplication> jobApplications = jobApplicationRepository.findByJobId(jobId, pageable);
+            
+            List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
+                .map(application -> {
+                    UserDetailToCreateJob user = identityServiceClient.getUserById(application.getUserId());
+                    return JobApplicationResponse.builder()
+                        .id(application.getId())
+                        .userId(application.getUserId())
+                        .jobId(application.getJobId())
+                        .userName(user.getName())
+                        .title(job.getTitle())
+                        .status(application.getStatus())
+                        .offerSalary(application.getOfferSalary())
+                        .offerPlan(application.getOfferPlan())
+                        .offerSkill(application.getOfferSkill())
+                        .appliedAt(application.getAppliedAt())
+                        .updatedAt(application.getUpdatedAt())
+                        .build();
+                })
+                .collect(Collectors.toList());
 
         return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements());
+    }
+
+    @Override
+    public long countAppliedSuccess(String userId) {
+        return jobApplicationRepository.countApprovedApplicationsByUserId(userId);
     }
 }
