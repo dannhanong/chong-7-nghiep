@@ -18,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 public class JobDetail {
     String id;
     String userName;
+    String categoryName; // Added field
     String title;
     String description;
     long salaryMin;
