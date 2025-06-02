@@ -215,35 +215,10 @@ public class JobServiceImpl implements JobService {
 
     private JobDetail fromJobToJobDetail(Job job) {
         String userName = "Không xác định";
-        List<User> lstUser  = userRepository.findAll();
-        if (lstUser.isEmpty()) {
-            log.warn("Không tìm thấy người dùng nào trong hệ thống");
-            return JobDetail.builder()
-                .id(job.getId())
-                .userName(userName)
-                .categoryName("Không xác định")
-                .title(job.getTitle())
-                .description(job.getDescription())
-                .salaryMin(job.getSalaryMin())
-                .salaryMax(job.getSalaryMax())
-                .experienceLevel(job.getExperienceLevel())
-                .benefits(job.getBenefits())
-                .applicationDeadline(job.getApplicationDeadline())
-                .status(job.getStatus())
-                .active(job.getActive())
-                .createdAt(dateFormatter.formatDate(job.getCreatedAt()))
-                .updatedAt(dateFormatter.formatDate(job.getUpdatedAt()))
-                .contentUri(job.getContentUri())
-                .build();
-        }
-        log.info("Tìm thấy {} người dùng trong hệ thống", lstUser.size());
         if (job.getUserId() != null) {
             try {
-                
                 log.info("Đang tìm người dùng với userId: {}", job.getUserId());
-                
-                User user = userRepository.findById("6835665908f9227aa6e1695e")
-                
+                User user = userRepository.findById(job.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với userId: " + job.getUserId()));
                 if (user.getName() != null && !user.getName().isEmpty()) {
                     userName = user.getUsername();
