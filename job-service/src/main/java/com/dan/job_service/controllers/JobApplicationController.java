@@ -3,6 +3,7 @@ package com.dan.job_service.controllers;
 import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.requets.UpdateStatusRequest;
+import com.dan.job_service.dtos.responses.JobApplicationResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.models.JobApplication;
 import com.dan.job_service.repositories.UserInteractionRepository;
@@ -44,10 +45,8 @@ public class JobApplicationController {
         }
     }
 
-    // Lấy danh sách đơn ứng tuyển của người dùng     public Page<JobApplication> getJobApplicationByUserId(String userId, String username, Pageable pageable) {
-
     @GetMapping("/private/list-application")
-    public ResponseEntity<Page<JobApplication>> getApplications(
+    public ResponseEntity<Page<JobApplicationResponse>> getApplications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             HttpServletRequest request
@@ -62,7 +61,7 @@ public class JobApplicationController {
     }
 
     @GetMapping("/private/list-application/{jobId}")
-    public ResponseEntity<Page<JobApplication>> getApplications(
+    public ResponseEntity<Page<JobApplicationResponse>> getApplications(
             @PathVariable String jobId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
