@@ -3,6 +3,7 @@ package com.dan.job_service.controllers;
 import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.requets.UpdateStatusRequest;
+import com.dan.job_service.dtos.responses.JobApplicationResponse;
 import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.models.JobApplication;
@@ -15,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import java.util.Collections;
 
 import org.apache.kafka.common.errors.ResourceNotFoundException;
-import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -48,10 +48,9 @@ public class JobApplicationController {
 
     // Lấy danh sách đơn ứng tuyển của người dùng     public Page<JobApplication> getJobApplicationByUserId(String userId, String username, Pageable pageable) {
 @GetMapping("/private/list-application")
-    public ResponseEntity<Page<JobApplicationWithJobResponse>> getApplications(
+    public ResponseEntity<Page<JobApplicationResponse>> getApplications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) ApplicationStatus status, // Thêm tham số status
             HttpServletRequest request
     ) {
         try {
@@ -61,14 +60,14 @@ public class JobApplicationController {
                         .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
             }
             Pageable pageable = PageRequest.of(page, size);
-            return ResponseEntity.ok(jobApplicationService.getJobApplicationsWithJobByUserId(username, status, pageable));
+            return ResponseEntity.ok(jobApplicationService.getJobApplicationByUserId(username, pageable));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
         }
     }
 
     @GetMapping("/private/list-application/{jobId}")
-    public ResponseEntity<Page<JobApplication>> getApplications(
+    public ResponseEntity<Page<JobApplicationResponse>> getApplications(
             @PathVariable String jobId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

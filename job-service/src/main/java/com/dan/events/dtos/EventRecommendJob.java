@@ -1,7 +1,7 @@
 package com.dan.events.dtos;
 
-
-import com.dan.job_service.dtos.responses.JobsLast24HoursResponse;
+import com.dan.job_service.dtos.responses.JobDetailEmail;
+import com.dan.job_service.models.Job;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -16,5 +16,5 @@ import java.util.List;
 public class EventRecommendJob {
     String recipient;
     String subject;
-    String body;
+    List<JobDetailEmail> body;
 }
