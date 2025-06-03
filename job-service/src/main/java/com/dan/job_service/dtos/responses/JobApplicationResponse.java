@@ -5,8 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 @Builder
@@ -24,4 +26,14 @@ public class JobApplicationResponse {
     private String offerSkill;
     private LocalDateTime appliedAt;
     private LocalDateTime updatedAt;
+    private boolean enabled;
+    private String email;
+    private String roles;
+    private String linkPage;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private Date dob;
+    private String phoneNumber;
+    private String avatarId;
+    private String pathName;
+    private long countApplied;
 } 

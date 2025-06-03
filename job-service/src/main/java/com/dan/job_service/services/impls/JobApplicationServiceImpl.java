@@ -5,7 +5,9 @@ import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.responses.JobApplicationResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
+import com.dan.job_service.dtos.responses.UserProfileDetailResponse;
 import com.dan.job_service.http_clients.IdentityServiceClient;
+import com.dan.job_service.http_clients.ProfileServiceClient;
 import com.dan.job_service.models.Job;
 import com.dan.job_service.models.JobApplication;
 import com.dan.job_service.repositories.JobApplicationRepository;
@@ -29,6 +31,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final JobApplicationRepository jobApplicationRepository;
     private final JobRepository jobRepository;
     private final IdentityServiceClient identityServiceClient;
+    private final ProfileServiceClient profileServiceClient;
 
     @Override
     public ResponseMessage applyJob(JobApplicationRequest request, String jobId, String username) {
@@ -96,12 +99,15 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .map(application -> {
                     Job job = jobRepository.findById(application.getJobId())
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+                    
+                    UserProfileDetailResponse userProfile = profileServiceClient.getUserProfileByUsername(username);
+                    long countApplied = countAppliedSuccess(user.getId());
                         
                     return JobApplicationResponse.builder()
                         .id(application.getId())
                         .userId(application.getUserId())
                         .jobId(application.getJobId())
-                        .userName(user.getName())
+                        .userName(userProfile.getName())
                         .title(job.getTitle())
                         .status(application.getStatus())
                         .offerSalary(application.getOfferSalary())
@@ -109,6 +115,15 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                         .offerSkill(application.getOfferSkill())
                         .appliedAt(application.getAppliedAt())
                         .updatedAt(application.getUpdatedAt())
+                        .enabled(userProfile.isEnabled())
+                        .email(userProfile.getEmail())
+                        .roles(userProfile.getRoles())
+                        .linkPage(userProfile.getLinkPage())
+                        .dob(userProfile.getDob())
+                        .phoneNumber(userProfile.getPhoneNumber())
+                        .avatarId(userProfile.getAvatarId())
+                        .pathName(userProfile.getPathName())
+                        .countApplied(countApplied)
                         .build();
                 })
                 .collect(Collectors.toList());
@@ -119,36 +134,48 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
     }
 
-        @Override
-        public Page<JobApplicationResponse> getJobApplicationByJobId(String jobId, String username, Pageable pageable) {
-            String userId = identityServiceClient.getUserByUsername(username).getId();
-            Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+    @Override
+    public Page<JobApplicationResponse> getJobApplicationByJobId(String jobId, String username, Pageable pageable) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
+        Job job = jobRepository.findById(jobId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
 
-            if (!job.getUserId().equals(userId)) {
-                throw new RuntimeException("Bạn không có quyền xem đơn ứng tuyển");
-            }
+        if (!job.getUserId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền xem đơn ứng tuyển");
+        }
 
-            Page<JobApplication> jobApplications = jobApplicationRepository.findByJobId(jobId, pageable);
-            
-            List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
-                .map(application -> {
-                    UserDetailToCreateJob user = identityServiceClient.getUserById(application.getUserId());
-                    return JobApplicationResponse.builder()
-                        .id(application.getId())
-                        .userId(application.getUserId())
-                        .jobId(application.getJobId())
-                        .userName(user.getName())
-                        .title(job.getTitle())
-                        .status(application.getStatus())
-                        .offerSalary(application.getOfferSalary())
-                        .offerPlan(application.getOfferPlan())
-                        .offerSkill(application.getOfferSkill())
-                        .appliedAt(application.getAppliedAt())
-                        .updatedAt(application.getUpdatedAt())
-                        .build();
-                })
-                .collect(Collectors.toList());
+        Page<JobApplication> jobApplications = jobApplicationRepository.findByJobId(jobId, pageable);
+        
+        List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
+            .map(application -> {
+                UserDetailToCreateJob user = identityServiceClient.getUserById(application.getUserId());
+                UserProfileDetailResponse userProfile = profileServiceClient.getUserProfileByUsername(user.getUsername());
+                long countApplied = countAppliedSuccess(application.getUserId());
+                
+                return JobApplicationResponse.builder()
+                    .id(application.getId())
+                    .userId(application.getUserId())
+                    .jobId(application.getJobId())
+                    .userName(userProfile.getName())
+                    .title(job.getTitle())
+                    .status(application.getStatus())
+                    .offerSalary(application.getOfferSalary())
+                    .offerPlan(application.getOfferPlan())
+                    .offerSkill(application.getOfferSkill())
+                    .appliedAt(application.getAppliedAt())
+                    .updatedAt(application.getUpdatedAt())
+                    .enabled(userProfile.isEnabled())
+                    .email(userProfile.getEmail())
+                    .roles(userProfile.getRoles())
+                    .linkPage(userProfile.getLinkPage())
+                    .dob(userProfile.getDob())
+                    .phoneNumber(userProfile.getPhoneNumber())
+                    .avatarId(userProfile.getAvatarId())
+                    .pathName(userProfile.getPathName())
+                    .countApplied(countApplied)
+                    .build();
+            })
+            .collect(Collectors.toList());
 
         return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements());
     }
