@@ -13,10 +13,16 @@ import org.springframework.data.domain.Pageable;
 
 public interface JobService {
     ResponseMessage create(JobRequest jobRequest, String username);
+
     ResponseMessage update(String id, JobRequest jobRequest, String username);
+
     ResponseMessage delete(String id, String username);
+
     JobDetail getJobById(String id, String username);
+
     List<JobsLast24HoursResponse> getJobsPostedLast24Hours();
-Page<JobDetail> getAll(String categoryId, String title, Pageable pageable); // Updated for pagination and filtering
-public ResponseMessage userUpdateJob(String id, JobRequest jobRequest, String username);
+
+    Page<JobDetail> getAll(String categoryId, String title, Pageable pageable); // Updated for pagination and filtering
+
+    ResponseMessage userUpdateJob(String id, JobRequest jobRequest, String username);
 }
