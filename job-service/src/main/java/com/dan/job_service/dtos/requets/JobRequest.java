@@ -23,5 +23,7 @@ public record JobRequest(
     LocalDate applicationDeadline,
     String contentUri,
     WorkingForm workingForm,
-    WorkingType workingType
+    WorkingType workingType,
+    Boolean status,
+    Boolean active
 ) {}

@@ -112,6 +112,44 @@ public class JobServiceImpl implements JobService {
             existingJob.setUpdatedAt(LocalDateTime.now());
             existingJob.setWorkingType(jobRequest.workingType());
             existingJob.setWorkingForm(jobRequest.workingForm());
+            existingJob.setStatus(jobRequest.status() != null ? jobRequest.status() : existingJob.getStatus());
+            existingJob.setActive(jobRequest.active() != null ? jobRequest.active() : existingJob.getActive());
+            jobRepository.save(existingJob);
+
+            return new ResponseMessage(200, "Cập nhật công việc thành công");
+        } catch (Exception e) {
+            log.error("Lỗi cập nhật công việc ID {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public ResponseMessage userUpdateJob(String id, JobRequest jobRequest, String username) {
+        try {
+            Job existingJob = jobRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+            Category category = categoryRepository
+                    .findById(jobRequest.categoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+
+            if (jobRequest.salaryMin() > jobRequest.salaryMax()) {
+                throw new RuntimeException("Lương tối thiểu không được lớn hơn lương tối đa");
+            }
+
+            existingJob.setCategoryId(category.getId());
+            existingJob.setTitle(jobRequest.title());
+            existingJob.setDescription(jobRequest.description());
+            existingJob.setSalaryMin(jobRequest.salaryMin());
+            existingJob.setSalaryMax(jobRequest.salaryMax());
+            existingJob.setExperienceLevel(jobRequest.experienceLevel());
+            existingJob.setBenefits(jobRequest.benefits());
+            existingJob.setApplicationDeadline(jobRequest.applicationDeadline());
+            existingJob.setContentUri(jobRequest.contentUri());
+            existingJob.setUpdatedAt(LocalDateTime.now());
+            existingJob.setWorkingType(jobRequest.workingType());
+            existingJob.setWorkingForm(jobRequest.workingForm());
+            existingJob.setActive(jobRequest.active() != null ? jobRequest.active() : existingJob.getActive());
             jobRepository.save(existingJob);
 
             return new ResponseMessage(200, "Cập nhật công việc thành công");
@@ -255,7 +293,9 @@ public class JobServiceImpl implements JobService {
         return JobDetail.builder()
                 .id(job.getId())
                 .userName(userName)
-                .categoryName(categoryName)
+                .categoryName(categoryName)  
+                .categoryId(job.getCategoryId())
+                .userId(job.getUserId())    
                 .title(job.getTitle())
                 .description(job.getDescription())
                 .salaryMin(job.getSalaryMin())
