@@ -1,12 +1,9 @@
 package com.dan.job_service.controllers;
 
-import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.requets.UpdateStatusRequest;
 import com.dan.job_service.dtos.responses.JobApplicationResponse;
-import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
-import com.dan.job_service.models.JobApplication;
 import com.dan.job_service.repositories.UserInteractionRepository;
 import com.dan.job_service.security.jwt.JwtService;
 import com.dan.job_service.services.JobApplicationService;
@@ -14,8 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Collections;
-
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
