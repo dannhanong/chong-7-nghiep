@@ -4,7 +4,7 @@ server:
 spring:
   data:
     mongodb:
-      uri: mongodb://root:123456@103.216.117.244:27017/jobs_job?authSource=admin&readPreference=primary&directConnection=true&ssl=false
+      uri: mongodb://${MONGO_USER:root}:${MONGO_PASS:123456}@${MONGO_HOST:103.216.117.244}:${MONGO_PORT:27017}/jobs_job?authSource=admin
   kafka:
     bootstrap-servers: ${KAFKA_HOST:103.216.117.244}:${KAFKA_PORT:9095}
     producer:
