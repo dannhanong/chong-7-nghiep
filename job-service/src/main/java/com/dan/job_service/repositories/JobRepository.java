@@ -19,4 +19,6 @@ public interface JobRepository extends MongoRepository<Job, String> {
     Page<Job> findByCategoryIdAndActiveTrue(String categoryId, Pageable pageable);
     Page<Job> findByTitleContainingIgnoreCaseAndActiveTrue(String title, Pageable pageable);
     Page<Job> findByCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(String categoryId, String title, Pageable pageable);
+    // Thêm phương thức mới để đếm số job theo userId và active = true
+    Integer countByUserIdAndActiveTrue(String userId);
 }

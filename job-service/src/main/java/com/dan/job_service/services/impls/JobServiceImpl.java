@@ -50,8 +50,8 @@ public class JobServiceImpl implements JobService {
     public ResponseMessage create(JobRequest jobRequest, String username) {
         try {
             Category category = categoryRepository
-                .findById(jobRequest.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+                    .findById(jobRequest.categoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
 
             UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
             String userId = user.getId();
@@ -61,21 +61,23 @@ public class JobServiceImpl implements JobService {
             }
 
             jobRepository.save(Job.builder()
-                .userId(userId)
-                .categoryId(category.getId())
-                .title(jobRequest.title())
-                .description(jobRequest.description())
-                .salaryMin(jobRequest.salaryMin())
-                .salaryMax(jobRequest.salaryMax())
-                .experienceLevel(jobRequest.experienceLevel())
-                .benefits(jobRequest.benefits())
-                .applicationDeadline(jobRequest.applicationDeadline())
-                .contentUri(jobRequest.contentUri())
-                .active(true)
-                .status(false)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build());
+                    .userId(userId)
+                    .categoryId(category.getId())
+                    .title(jobRequest.title())
+                    .description(jobRequest.description())
+                    .salaryMin(jobRequest.salaryMin())
+                    .salaryMax(jobRequest.salaryMax())
+                    .experienceLevel(jobRequest.experienceLevel())
+                    .benefits(jobRequest.benefits())
+                    .applicationDeadline(jobRequest.applicationDeadline())
+                    .contentUri(jobRequest.contentUri())
+                    .active(true)
+                    .status(false)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .workingType(jobRequest.workingType())
+                    .workingForm(jobRequest.workingForm())
+                    .build());
 
             return new ResponseMessage(200, "Tạo công việc thành công");
         } catch (Exception e) {
@@ -89,10 +91,10 @@ public class JobServiceImpl implements JobService {
     public ResponseMessage update(String id, JobRequest jobRequest, String username) {
         try {
             Job existingJob = jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
             Category category = categoryRepository
-                .findById(jobRequest.categoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+                    .findById(jobRequest.categoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
 
             if (jobRequest.salaryMin() > jobRequest.salaryMax()) {
                 throw new RuntimeException("Lương tối thiểu không được lớn hơn lương tối đa");
@@ -108,6 +110,8 @@ public class JobServiceImpl implements JobService {
             existingJob.setApplicationDeadline(jobRequest.applicationDeadline());
             existingJob.setContentUri(jobRequest.contentUri());
             existingJob.setUpdatedAt(LocalDateTime.now());
+            existingJob.setWorkingType(jobRequest.workingType());
+            existingJob.setWorkingForm(jobRequest.workingForm());
             jobRepository.save(existingJob);
 
             return new ResponseMessage(200, "Cập nhật công việc thành công");
@@ -122,7 +126,7 @@ public class JobServiceImpl implements JobService {
     public ResponseMessage delete(String id, String username) {
         try {
             Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
             UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
             String userId = user.getId();
 
@@ -145,14 +149,14 @@ public class JobServiceImpl implements JobService {
     public JobDetail getJobById(String id, String username) {
         try {
             Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
 
             if (username != null) {
                 UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
                 kafkaTemplate.send("job_get_job_by_id", EventAddJobDataForRecommend.builder()
-                    .userId(user.getId())
-                    .jobId(job.getId())
-                    .build());
+                        .userId(user.getId())
+                        .jobId(job.getId())
+                        .build());
             }
             return fromJobToJobDetail(job);
         } catch (Exception e) {
@@ -170,8 +174,8 @@ public class JobServiceImpl implements JobService {
 
             List<Job> jobs = jobRepository.findByCreatedAtBetweenAndActiveTrue(yesterday, today);
             return jobs.stream()
-                .map(JobsLast24HoursResponse::fromJobToJobLast24Hours)
-                .collect(Collectors.toList());
+                    .map(JobsLast24HoursResponse::fromJobToJobLast24Hours)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Lỗi lấy danh sách công việc 24h: {}", e.getMessage(), e);
             throw e;
@@ -181,16 +185,18 @@ public class JobServiceImpl implements JobService {
     @Override
     public Page<JobDetail> getAll(String categoryId, String title, Pageable pageable) {
         try {
-            log.info("Lấy danh sách công việc với categoryId: {}, title: {}, pageable: {}", categoryId, title, pageable);
+            log.info("Lấy danh sách công việc với categoryId: {}, title: {}, pageable: {}", categoryId, title,
+                    pageable);
             Page<Job> jobsPage;
 
             if (categoryId != null && !categoryId.isEmpty()) {
                 categoryRepository.findById(categoryId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
             }
 
             if (categoryId != null && !categoryId.isEmpty() && title != null && !title.isEmpty()) {
-                jobsPage = jobRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(categoryId, title, pageable);
+                jobsPage = jobRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(categoryId, title,
+                        pageable);
             } else if (categoryId != null && !categoryId.isEmpty()) {
                 jobsPage = jobRepository.findByCategoryIdAndActiveTrue(categoryId, pageable);
             } else if (title != null && !title.isEmpty()) {
@@ -200,8 +206,8 @@ public class JobServiceImpl implements JobService {
             }
 
             List<JobDetail> jobDetails = jobsPage.getContent().stream()
-                .map(this::fromJobToJobDetail)
-                .collect(Collectors.toList());
+                    .map(this::fromJobToJobDetail)
+                    .collect(Collectors.toList());
 
             log.info("Số lượng công việc tìm thấy: {}", jobsPage.getTotalElements());
             return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
@@ -213,6 +219,7 @@ public class JobServiceImpl implements JobService {
 
     private JobDetail fromJobToJobDetail(Job job) {
         String userName = "Không xác định";
+        Integer sumJob = 0; // Khởi tạo sumJob
         if (job.getUserId() != null) {
             try {
                 log.info("Đang tìm người dùng với userId: {}", job.getUserId());
@@ -223,8 +230,12 @@ public class JobServiceImpl implements JobService {
                 } else {
                     log.warn("Tên người dùng trống cho userId: {}", job.getUserId());
                 }
+                // Đếm số job của userId này
+                sumJob = jobRepository.countByUserIdAndActiveTrue(job.getUserId());
+                log.info("Số lượng job của userId {}: {}", job.getUserId(), sumJob);
             } catch (Exception e) {
-                log.error("Lỗi khi lấy thông tin người dùng cho userId {}: {}", job.getUserId(), e.getMessage(), e);
+                log.error("Lỗi khi lấy thông tin người dùng hoặc đếm job cho userId {}: {}", job.getUserId(),
+                        e.getMessage(), e);
             }
         } else {
             log.warn("userId của công việc {} là null", job.getId());
@@ -234,7 +245,7 @@ public class JobServiceImpl implements JobService {
         if (job.getCategoryId() != null) {
             try {
                 Category category = categoryRepository.findById(job.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
                 categoryName = category.getName();
             } catch (Exception e) {
                 log.warn("Không thể lấy thông tin danh mục cho categoryId {}: {}", job.getCategoryId(), e.getMessage());
@@ -242,21 +253,24 @@ public class JobServiceImpl implements JobService {
         }
 
         return JobDetail.builder()
-            .id(job.getId())
-            .userName(userName)
-            .categoryName(categoryName)
-            .title(job.getTitle())
-            .description(job.getDescription())
-            .salaryMin(job.getSalaryMin())
-            .salaryMax(job.getSalaryMax())
-            .experienceLevel(job.getExperienceLevel())
-            .benefits(job.getBenefits())
-            .applicationDeadline(job.getApplicationDeadline())
-            .status(job.getStatus())
-            .active(job.getActive())
-            .createdAt(dateFormatter.formatDate(job.getCreatedAt()))
-            .updatedAt(dateFormatter.formatDate(job.getUpdatedAt()))
-            .contentUri(job.getContentUri())
-            .build();
+                .id(job.getId())
+                .userName(userName)
+                .categoryName(categoryName)
+                .title(job.getTitle())
+                .description(job.getDescription())
+                .salaryMin(job.getSalaryMin())
+                .salaryMax(job.getSalaryMax())
+                .experienceLevel(job.getExperienceLevel())
+                .benefits(job.getBenefits())
+                .applicationDeadline(job.getApplicationDeadline())
+                .status(job.getStatus())
+                .active(job.getActive())
+                .createdAt(dateFormatter.formatDate(job.getCreatedAt()))
+                .updatedAt(dateFormatter.formatDate(job.getUpdatedAt()))
+                .contentUri(job.getContentUri())
+                .workingType(job.getWorkingType())
+                .workingForm(job.getWorkingForm())
+                .sumJob(sumJob) // Gán số lượng job vào đây
+                .build();
     }
 }

@@ -2,6 +2,9 @@ package com.dan.job_service.dtos.responses;
 
 import java.time.LocalDate;
 
+import com.dan.job_service.dtos.enums.WorkingForm;
+import com.dan.job_service.dtos.enums.WorkingType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,4 +34,7 @@ public class JobDetail {
     String createdAt;
     String updatedAt;
     String contentUri;
+    WorkingType workingType;
+    WorkingForm workingForm;
+    Integer sumJob;
 }

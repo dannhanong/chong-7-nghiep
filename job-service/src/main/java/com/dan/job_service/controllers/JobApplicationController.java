@@ -42,17 +42,19 @@ public class JobApplicationController {
             jobApplicationService.applyJob(jobApplicationRequest, jobId, username);
             return ResponseEntity.ok(new ResponseMessage(200, "Bạn vừa ứng tuyển công việc thành công"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi khi ứng tuyển công việc: " + e.getMessage()));
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi ứng tuyển công việc: " + e.getMessage()));
         }
     }
 
-    // Lấy danh sách đơn ứng tuyển của người dùng     public Page<JobApplication> getJobApplicationByUserId(String userId, String username, Pageable pageable) {
-@GetMapping("/private/list-application")
+    // Lấy danh sách đơn ứng tuyển của người dùng public Page<JobApplication>
+    // getJobApplicationByUserId(String userId, String username, Pageable pageable)
+    // {
+    @GetMapping("/private/list-application")
     public ResponseEntity<Page<JobApplicationResponse>> getApplications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
             if (username == null || username.isEmpty()) {
@@ -62,7 +64,8 @@ public class JobApplicationController {
             Pageable pageable = PageRequest.of(page, size);
             return ResponseEntity.ok(jobApplicationService.getJobApplicationByUserId(username, pageable));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
+            return ResponseEntity.badRequest()
+                    .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
         }
     }
 
@@ -71,8 +74,7 @@ public class JobApplicationController {
             @PathVariable String jobId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
         String username = jwtService.getUsernameFromRequest(request);
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(jobApplicationService.getJobApplicationByJobId(jobId, username, pageable));
@@ -80,13 +82,14 @@ public class JobApplicationController {
 
     @PutMapping("/private/status/{id}")
     public ResponseEntity<ResponseMessage> updateStatus(
-            @PathVariable String id, 
+            @PathVariable String id,
             @RequestBody UpdateStatusRequest updateStatusRequest) {
         try {
             jobApplicationService.updateStatus(id, updateStatusRequest.status());
             return ResponseEntity.ok(new ResponseMessage(200, "Cập nhật trạng thái đơn ứng tuyển thành công"));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new ResponseMessage(400, "Lỗi khi cập nhật trạng thái đơn ứng tuyển: " + e.getMessage()));
+            return ResponseEntity.internalServerError()
+                    .body(new ResponseMessage(400, "Lỗi khi cập nhật trạng thái đơn ứng tuyển: " + e.getMessage()));
         }
     }
 }

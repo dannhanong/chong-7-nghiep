@@ -2,6 +2,9 @@ package com.dan.job_service.dtos.requets;
 
 import java.time.LocalDate;
 
+import com.dan.job_service.dtos.enums.WorkingForm;
+import com.dan.job_service.dtos.enums.WorkingType;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
@@ -18,5 +21,7 @@ public record JobRequest(
     String benefits, 
     @NotBlank(message = "Hạn nộp hồ sơ không được để trống")   
     LocalDate applicationDeadline,
-    String contentUri
+    String contentUri,
+    WorkingForm workingForm,
+    WorkingType workingType
 ) {}
