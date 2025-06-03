@@ -115,6 +115,8 @@ public class EmailLogServiceImpl implements EmailLogService {
                                         if (emailLogRepository.existsByUsernameAndJobId(user.getUsername(), jobId)) {
                                                 return null;
                                         }
+                                        // Save email log for the job
+                                        saveEmailLog(user.getUsername(), jobId);
                                         return jobService.getJobById(jobId, null);
                                 })
                                 .filter(Objects::nonNull)

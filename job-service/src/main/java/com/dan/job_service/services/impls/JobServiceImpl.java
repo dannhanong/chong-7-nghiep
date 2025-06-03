@@ -20,12 +20,13 @@ import com.dan.events.dtos.EventAddJobDataForRecommend;
 import com.dan.job_service.dtos.requets.JobRequest;
 import com.dan.job_service.dtos.responses.JobDetail;
 import com.dan.job_service.dtos.responses.ResponseMessage;
+import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
+import com.dan.job_service.http_clients.IdentityServiceClient;
 import com.dan.job_service.models.Category;
 import com.dan.job_service.models.Job;
 import com.dan.job_service.models.User;
 import com.dan.job_service.repositories.CategoryRepository;
 import com.dan.job_service.repositories.JobRepository;
-import com.dan.job_service.repositories.UserRepository;
 import com.dan.job_service.services.DateFormatter;
 import com.dan.job_service.services.JobService;
 
@@ -38,9 +39,9 @@ public class JobServiceImpl implements JobService {
     @Autowired
     private CategoryRepository categoryRepository;
     @Autowired
-    private UserRepository userRepository; // Thêm repository cho User
-    @Autowired
     private DateFormatter dateFormatter;
+    @Autowired
+    private IdentityServiceClient identityServiceClient;
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -52,8 +53,7 @@ public class JobServiceImpl implements JobService {
                 .findById(jobRequest.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
 
-            User user = userRepository.findById(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với username: " + username));
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
             String userId = user.getId();
 
             if (jobRequest.salaryMin() > jobRequest.salaryMax()) {
@@ -123,8 +123,7 @@ public class JobServiceImpl implements JobService {
         try {
             Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
-            User user = userRepository.findById(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với username: " + username));
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
             String userId = user.getId();
 
             if (!userId.equals(job.getUserId())) {
@@ -149,8 +148,7 @@ public class JobServiceImpl implements JobService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
 
             if (username != null) {
-                User user = userRepository.findById(username)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với username: " + username));
+                UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
                 kafkaTemplate.send("job_get_job_by_id", EventAddJobDataForRecommend.builder()
                     .userId(user.getId())
                     .jobId(job.getId())
@@ -218,8 +216,7 @@ public class JobServiceImpl implements JobService {
         if (job.getUserId() != null) {
             try {
                 log.info("Đang tìm người dùng với userId: {}", job.getUserId());
-                User user = userRepository.findById(job.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với userId: " + job.getUserId()));
+                UserDetailToCreateJob user = identityServiceClient.getUserById(job.getUserId());
                 if (user.getName() != null && !user.getName().isEmpty()) {
                     userName = user.getUsername();
                     log.info("userName được đặt thành: {}", userName);
