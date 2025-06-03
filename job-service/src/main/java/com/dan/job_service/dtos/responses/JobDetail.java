@@ -21,6 +21,7 @@ import lombok.experimental.FieldDefaults;
 public class JobDetail {
     String id;
     String userName;
+    String name;
     String categoryName; // Added field
     String categoryId; // Added field
     String userId;

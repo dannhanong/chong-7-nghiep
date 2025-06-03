@@ -260,6 +260,8 @@ public class JobServiceImpl implements JobService {
 
     private JobDetail fromJobToJobDetail(Job job) {
         String userName = "Không xác định";
+
+        String name = "Không xác định"; // Khởi tạo name
         Integer sumJob = 0; // Khởi tạo sumJob
         if (job.getUserId() != null) {
             try {
@@ -267,6 +269,7 @@ public class JobServiceImpl implements JobService {
                 UserDetailToCreateJob user = identityServiceClient.getUserById(job.getUserId());
                 if (user.getName() != null && !user.getName().isEmpty()) {
                     userName = user.getUsername();
+                    name = user.getName(); // Cập nhật name từ user
                     log.info("userName được đặt thành: {}", userName);
                 } else {
                     log.warn("Tên người dùng trống cho userId: {}", job.getUserId());
@@ -296,6 +299,7 @@ public class JobServiceImpl implements JobService {
         return JobDetail.builder()
                 .id(job.getId())
                 .userName(userName)
+                .name(name)
                 .categoryName(categoryName)  
                 .categoryId(job.getCategoryId())
                 .userId(job.getUserId())    
