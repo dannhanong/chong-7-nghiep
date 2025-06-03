@@ -17,5 +17,7 @@ import lombok.experimental.FieldDefaults;
 public class UserDetailToCreateJob {
     String id;
     String name;
+    String username;
+    String email;
     // boolean identityVerified;
 }
