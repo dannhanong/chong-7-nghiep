@@ -64,6 +64,7 @@ public class JobServiceImpl implements JobService {
                     .userId(userId)
                     .categoryId(category.getId())
                     .title(jobRequest.title())
+                    .shortDescription(jobRequest.shortDescription())
                     .description(jobRequest.description())
                     .salaryMin(jobRequest.salaryMin())
                     .salaryMax(jobRequest.salaryMax())
@@ -102,6 +103,7 @@ public class JobServiceImpl implements JobService {
 
             existingJob.setCategoryId(category.getId());
             existingJob.setTitle(jobRequest.title());
+            existingJob.setShortDescription(jobRequest.shortDescription());
             existingJob.setDescription(jobRequest.description());
             existingJob.setSalaryMin(jobRequest.salaryMin());
             existingJob.setSalaryMax(jobRequest.salaryMax());
@@ -139,6 +141,7 @@ public class JobServiceImpl implements JobService {
 
             existingJob.setCategoryId(category.getId());
             existingJob.setTitle(jobRequest.title());
+            existingJob.setShortDescription(jobRequest.shortDescription());
             existingJob.setDescription(jobRequest.description());
             existingJob.setSalaryMin(jobRequest.salaryMin());
             existingJob.setSalaryMax(jobRequest.salaryMax());
@@ -297,6 +300,7 @@ public class JobServiceImpl implements JobService {
                 .categoryId(job.getCategoryId())
                 .userId(job.getUserId())    
                 .title(job.getTitle())
+                .shortDescription(job.getShortDescription())
                 .description(job.getDescription())
                 .salaryMin(job.getSalaryMin())
                 .salaryMax(job.getSalaryMax())

@@ -25,6 +25,7 @@ public class JobDetail {
     String categoryId; // Added field
     String userId;
     String title;
+    String shortDescription; // Changed from description to shortDescription
     String description;
     long salaryMin;
     long salaryMax;
