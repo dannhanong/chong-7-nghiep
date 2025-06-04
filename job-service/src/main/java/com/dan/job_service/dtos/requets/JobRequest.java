@@ -26,5 +26,6 @@ public record JobRequest(
     WorkingForm workingForm,
     WorkingType workingType,
     Boolean status,
-    Boolean active
+    Boolean active,
+    Boolean done
 ) {}

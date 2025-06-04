@@ -58,6 +58,9 @@ public class Job {
     Boolean status;
     Boolean active;
 
+    @Builder.Default
+    Boolean done = false;
+
     WorkingType workingType;
     WorkingForm workingForm;
 
