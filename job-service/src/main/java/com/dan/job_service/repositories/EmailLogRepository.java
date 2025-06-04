@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface EmailLogRepository extends MongoRepository<EmailLog, String> {
     EmailLog findByJobId(String jobId);
-
-    List<EmailLog> findByEmail(String email);
+    List<EmailLog> findByUsername(String username);
+    EmailLog findByUsernameAndJobId(String username, String jobId);
+    boolean existsByUsernameAndJobId(String username, String jobId);
 }

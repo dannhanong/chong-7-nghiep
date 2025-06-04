@@ -2,9 +2,7 @@ package com.dan.events;
 
 import java.time.LocalDateTime;
 
-import com.dan.events.dtos.EventRecommendJobNotification;
-import com.dan.job_service.dtos.responses.JobsLast24HoursResponse;
-import com.dan.job_service.models.Job;
+
 import com.dan.job_service.repositories.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -31,10 +29,5 @@ public class EventController {
                 .jobId(message.getJobId())
                 .timestamp(LocalDateTime.now())
                 .build());
-    }
-
-    @KafkaListener(topics = "job_recommend_last_24h")
-    public void listenGetJobLast24Hours(EventRecommendJobNotification message) {
-
     }
 }

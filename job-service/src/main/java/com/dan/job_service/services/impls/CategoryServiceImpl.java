@@ -120,7 +120,12 @@ public class CategoryServiceImpl implements CategoryService {
                 .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
-                .parent(pCategory != null ? fromCategoryToCategoryResponse(pCategory) : null)
+                .parent(pCategory != null ? CategoryResponse.builder()
+                        .id(pCategory.getId())
+                        .name(pCategory.getName())
+                        .description(pCategory.getDescription())
+                        .totalJob(jobRepository.countByCategoryId(pCategory.getId()))
+                        .build() : null)
                 .totalJob(jobRepository.countByCategoryId(category.getId()))
                 .build();
     }

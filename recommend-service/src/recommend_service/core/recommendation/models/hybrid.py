@@ -507,7 +507,7 @@ class HybridRecommender:
         return result
     
     def recommend_jobs_for_user_gmail(self,
-                                      list_user_username: List[str]) -> Dict[str, List[Dict]]:
+                                      list_user_username: List[str]) -> List[Dict]:
         """
         Lọc các công việc phổ biến cho một danh sách người dùng dựa trên tên đăng nhập
         Args:
@@ -515,7 +515,7 @@ class HybridRecommender:
         Returns:
             Dictionary với key là tên đăng nhập và value là danh sách các công việc được gợi ý
         """
-        recommend_jobs_to_send = {}
+        recommend_jobs_to_send = []
         for username in list_user_username:
             all_jobs = self.recommend_jobs(
                 username=username,
@@ -529,5 +529,9 @@ class HybridRecommender:
             
             filtered_job_ids = {str(job['_id']) for job in filtered_jobs}
 
-            recommend_jobs_to_send[get_email_from_username(username)] = filtered_job_ids if filtered_job_ids else None
+            # recommend_jobs_to_send[get_email_from_username(username)] = filtered_job_ids if filtered_job_ids else None
+            recommend_jobs_to_send.append({
+                "username": username,
+                "job_ids": filtered_job_ids if filtered_job_ids else None
+            })
         return recommend_jobs_to_send

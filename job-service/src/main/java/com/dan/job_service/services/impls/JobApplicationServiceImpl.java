@@ -2,11 +2,14 @@ package com.dan.job_service.services.impls;
 
 import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
+import com.dan.job_service.dtos.responses.JobApplicationResponse;
 import com.dan.job_service.dtos.responses.JobApplicationDetailResponse;
 import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
+import com.dan.job_service.dtos.responses.UserProfileDetailResponse;
 import com.dan.job_service.http_clients.IdentityServiceClient;
+import com.dan.job_service.http_clients.ProfileServiceClient;
 import com.dan.job_service.models.Job;
 import com.dan.job_service.models.JobApplication;
 import com.dan.job_service.repositories.JobApplicationRepository;
@@ -15,10 +18,14 @@ import com.dan.job_service.services.JobApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,15 +33,16 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final JobApplicationRepository jobApplicationRepository;
     private final JobRepository jobRepository;
     private final IdentityServiceClient identityServiceClient;
+    private final ProfileServiceClient profileServiceClient;
 
     @Override
     public ResponseMessage applyJob(JobApplicationRequest request, String jobId, String username) {
         String userId = identityServiceClient.getUserByUsername(username).getId();
         Job job = jobRepository.findById(jobId).orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
 
-        if (jobApplicationRepository.findByUserIdAndJobId(userId, jobId).isPresent()) {
-            throw new RuntimeException("Bạn đã ứng tuyển công việc này");
-        }
+//        if (jobApplicationRepository.findByUserIdAndJobId(userId, jobId).isPresent()) {
+//            throw new RuntimeException("Bạn đã ứng tuyển công việc này");
+//        }
         if(request.offerSalary() < job.getSalaryMin() || request.offerSalary() > job.getSalaryMax()){
             throw new RuntimeException("Lương đề xuất phải nằm trong khoảng từ " + job.getSalaryMin() + " đến " + job.getSalaryMax());
         }
@@ -80,20 +88,56 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     }
 
     @Override
-public Page<JobApplication> getJobApplicationByUserId(String username, Pageable pageable) {
-    try {
-        UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
-        if (user == null || user.getId() == null) {
-            throw new RuntimeException("Không tìm thấy thông tin người dùng");
+    public Page<JobApplicationResponse> getJobApplicationByUserId(String username, Pageable pageable) {
+        try {
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+            if (user == null || user.getId() == null) {
+                throw new RuntimeException("Không tìm thấy thông tin người dùng");
+            }
+
+            Page<JobApplication> jobApplications = jobApplicationRepository.findByUserId(user.getId(), pageable);
+
+            List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
+                .map(application -> {
+                    Job job = jobRepository.findById(application.getJobId())
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+
+                    UserProfileDetailResponse userProfile = profileServiceClient.getUserProfileByUsername(username);
+                    long countApplied = countAppliedSuccess(user.getId());
+
+                    return JobApplicationResponse.builder()
+                        .id(application.getId())
+                        .userId(application.getUserId())
+                        .jobId(application.getJobId())
+                        .userName(userProfile.getName())
+                        .title(job.getTitle())
+                        .status(application.getStatus())
+                        .offerSalary(application.getOfferSalary())
+                        .offerPlan(application.getOfferPlan())
+                        .offerSkill(application.getOfferSkill())
+                        .appliedAt(application.getAppliedAt())
+                        .updatedAt(application.getUpdatedAt())
+                        .enabled(userProfile.isEnabled())
+                        .email(userProfile.getEmail())
+                        .roles(userProfile.getRoles())
+                        .linkPage(userProfile.getLinkPage())
+                        .dob(userProfile.getDob())
+                        .phoneNumber(userProfile.getPhoneNumber())
+                        .avatarId(userProfile.getAvatarId())
+                        .pathName(userProfile.getPathName())
+                        .countApplied(countApplied)
+                        .build();
+                })
+                .collect(Collectors.toList());
+
+            return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements());
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi lấy danh sách đơn ứng tuyển: " + e.getMessage());
         }
-        return jobApplicationRepository.findByUserId(user.getId(), pageable);
-    } catch (Exception e) {
-        throw new RuntimeException("Lỗi khi lấy danh sách đơn ứng tuyển: " + e.getMessage());
     }
-}
 
     @Override
-    public Page<JobApplication> getJobApplicationByJobId(String jobId, String username, Pageable pageable) {
+    public Page<JobApplicationResponse> getJobApplicationByJobId(String jobId, String username, Pageable pageable) {
         String userId = identityServiceClient.getUserByUsername(username).getId();
         Job job = jobRepository.findById(jobId)
             .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
@@ -102,75 +146,66 @@ public Page<JobApplication> getJobApplicationByUserId(String username, Pageable 
             throw new RuntimeException("Bạn không có quyền xem đơn ứng tuyển");
         }
 
-        return jobApplicationRepository.findByJobId(jobId, pageable);
-    }
+        Page<JobApplication> jobApplications = jobApplicationRepository.findByJobId(jobId, pageable);
 
-    @Override
-    public Page<JobApplicationWithJobResponse> getJobApplicationsWithJobByUserId(String username, ApplicationStatus status, Pageable pageable) {
-        UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
-        if (user == null || user.getId() == null) {
-            throw new RuntimeException("Không tìm thấy thông tin người dùng");
-        }
-        Page<JobApplication> applications;
-        if (status != null) {
-            applications = jobApplicationRepository.findByUserIdAndStatus(user.getId(), status, pageable);
-        } else {
-            applications = jobApplicationRepository.findByUserId(user.getId(), pageable);
-        }
-        return applications.map(application -> {
-            Job job = jobRepository.findById(application.getJobId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc với ID: " + application.getJobId()));
-            return JobApplicationWithJobResponse.builder()
-                    .applicationId(application.getId())
+        List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
+            .map(application -> {
+                UserDetailToCreateJob user = identityServiceClient.getUserById(application.getUserId());
+                UserProfileDetailResponse userProfile = profileServiceClient.getUserProfileByUsername(user.getUsername());
+                long countApplied = countAppliedSuccess(application.getUserId());
+
+                return JobApplicationResponse.builder()
+                    .id(application.getId())
                     .userId(application.getUserId())
                     .jobId(application.getJobId())
+                    .userName(userProfile.getName())
+                    .title(job.getTitle())
                     .status(application.getStatus())
                     .offerSalary(application.getOfferSalary())
                     .offerPlan(application.getOfferPlan())
                     .offerSkill(application.getOfferSkill())
                     .appliedAt(application.getAppliedAt())
                     .updatedAt(application.getUpdatedAt())
-                    .jobTitle(job.getTitle())
-                    .categoryId(job.getCategoryId())
-                    .shortDescription(job.getShortDescription())
-                    .description(job.getDescription())
-                    .salaryMin(job.getSalaryMin())
-                    .salaryMax(job.getSalaryMax())
-                    .experienceLevel(job.getExperienceLevel())
-                    .benefits(job.getBenefits())
-                    .requirements(job.getRequirements())
-                    .skills(job.getSkills())
-                    .applicationDeadline(job.getApplicationDeadline())
-                    .jobStatus(job.getStatus())
-                    .active(job.getActive())
-                    .workingType(job.getWorkingType())
-                    .workingForm(job.getWorkingForm())
-                    .jobCreatedAt(job.getCreatedAt())
-                    .jobUpdatedAt(job.getUpdatedAt())
+                    .enabled(userProfile.isEnabled())
+                    .email(userProfile.getEmail())
+                    .roles(userProfile.getRoles())
+                    .linkPage(userProfile.getLinkPage())
+                    .dob(userProfile.getDob())
+                    .phoneNumber(userProfile.getPhoneNumber())
+                    .avatarId(userProfile.getAvatarId())
+                    .pathName(userProfile.getPathName())
+                    .countApplied(countApplied)
                     .build();
-        });
+            })
+            .collect(Collectors.toList());
+
+        return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements());
     }
 
     @Override
+    public long countAppliedSuccess(String userId) {
+        return jobApplicationRepository.countApprovedApplicationsByUserId(userId);
+    }
+    @Override
     public Object getJobApplicationDetail(String applicationId) {
         JobApplication application = jobApplicationRepository.findById(applicationId)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn ứng tuyển"));
-        
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn ứng tuyển"));
+
         Job job = jobRepository.findById(application.getJobId())
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
-        
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+
         // Get client info
         UserDetailToCreateJob clientUser = identityServiceClient.getUserById(job.getUserId());
         UserDetailToCreateJob freelancerUser = identityServiceClient.getUserById(application.getUserId());
-        
+
         return JobApplicationDetailResponse.builder()
-            .id(application.getId())
-            .jobId(application.getJobId())
-            .jobTitle(job.getTitle())
-            .clientUsername(clientUser.getName())
-            .freelancerUsername(freelancerUser.getName())
-            .status(application.getStatus().toString())
-            .completedAt(application.getUpdatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())
-            .build();
+                .id(application.getId())
+                .jobId(application.getJobId())
+                .jobTitle(job.getTitle())
+                .clientUsername(clientUser.getName())
+                .freelancerUsername(freelancerUser.getName())
+                .status(application.getStatus().toString())
+                .completedAt(application.getUpdatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+                .build();
     }
 }
