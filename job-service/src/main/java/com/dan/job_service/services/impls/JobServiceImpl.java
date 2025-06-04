@@ -116,6 +116,8 @@ public class JobServiceImpl implements JobService {
             existingJob.setWorkingForm(jobRequest.workingForm());
             existingJob.setStatus(jobRequest.status() != null ? jobRequest.status() : existingJob.getStatus());
             existingJob.setActive(jobRequest.active() != null ? jobRequest.active() : existingJob.getActive());
+            existingJob.setDone(jobRequest.done() != null ? jobRequest.done() : existingJob.getDone());
+
             jobRepository.save(existingJob);
 
             return new ResponseMessage(200, "Cập nhật công việc thành công");
@@ -153,6 +155,7 @@ public class JobServiceImpl implements JobService {
             existingJob.setWorkingType(jobRequest.workingType());
             existingJob.setWorkingForm(jobRequest.workingForm());
             existingJob.setActive(jobRequest.active() != null ? jobRequest.active() : existingJob.getActive());
+            existingJob.setDone(jobRequest.done() != null ? jobRequest.done() : existingJob.getDone());
             jobRepository.save(existingJob);
 
             return new ResponseMessage(200, "Cập nhật công việc thành công");
@@ -300,9 +303,9 @@ public class JobServiceImpl implements JobService {
                 .id(job.getId())
                 .userName(userName)
                 .name(name)
-                .categoryName(categoryName)  
+                .categoryName(categoryName)
                 .categoryId(job.getCategoryId())
-                .userId(job.getUserId())    
+                .userId(job.getUserId())
                 .title(job.getTitle())
                 .shortDescription(job.getShortDescription())
                 .description(job.getDescription())
