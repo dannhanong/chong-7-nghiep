@@ -2,6 +2,7 @@ package com.dan.job_service.services.impls;
 
 import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
+import com.dan.job_service.dtos.responses.JobApplicationDetailResponse;
 import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
@@ -150,5 +151,26 @@ public Page<JobApplication> getJobApplicationByUserId(String username, Pageable 
         });
     }
 
-    
+    @Override
+    public Object getJobApplicationDetail(String applicationId) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn ứng tuyển"));
+        
+        Job job = jobRepository.findById(application.getJobId())
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+        
+        // Get client info
+        UserDetailToCreateJob clientUser = identityServiceClient.getUserById(job.getUserId());
+        UserDetailToCreateJob freelancerUser = identityServiceClient.getUserById(application.getUserId());
+        
+        return JobApplicationDetailResponse.builder()
+            .id(application.getId())
+            .jobId(application.getJobId())
+            .jobTitle(job.getTitle())
+            .clientUsername(clientUser.getName())
+            .freelancerUsername(freelancerUser.getName())
+            .status(application.getStatus().toString())
+            .completedAt(application.getUpdatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+            .build();
+    }
 }

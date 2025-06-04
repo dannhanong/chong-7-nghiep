@@ -90,4 +90,13 @@ public class JobApplicationController {
             return ResponseEntity.internalServerError().body(new ResponseMessage(400, "Lỗi khi cập nhật trạng thái đơn ứng tuyển: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/applications/{applicationId}/detail")
+    public ResponseEntity<?> getJobApplicationDetail(@PathVariable String applicationId) {
+        try {
+            return ResponseEntity.ok(jobApplicationService.getJobApplicationDetail(applicationId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin đơn ứng tuyển: " + e.getMessage()));
+        }
+    }
 }

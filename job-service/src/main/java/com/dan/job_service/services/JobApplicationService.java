@@ -14,4 +14,5 @@ public interface JobApplicationService {
     Page<JobApplication> getJobApplicationByUserId(String username, Pageable pageable);
     Page<JobApplication> getJobApplicationByJobId(String jobId, String username, Pageable pageable);
     Page<JobApplicationWithJobResponse> getJobApplicationsWithJobByUserId(String username, ApplicationStatus status, Pageable pageable); // Cập nhật phương thức
+    Object getJobApplicationDetail(String applicationId);
 }
