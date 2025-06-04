@@ -25,4 +25,8 @@ public interface JobService {
     Page<JobDetail> getAll(String categoryId, String title, Pageable pageable); // Updated for pagination and filtering
 
     ResponseMessage userUpdateJob(String id, JobRequest jobRequest, String username);
+    
+    ResponseMessage markJobAsDone(String jobId, String username);
+    
+    ResponseMessage markJobAsUndone(String jobId, String username);
 }

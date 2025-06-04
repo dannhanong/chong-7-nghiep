@@ -16,4 +16,8 @@ public class JobApplicationDetailResponse {
     private String freelancerUsername;
     private String status;
     private Instant completedAt;
+    
+    // Thêm field để check job đã hoàn thành
+    private Boolean jobDone;
+    private String jobStatus; // For additional job validation
 }

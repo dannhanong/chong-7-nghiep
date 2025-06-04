@@ -202,10 +202,12 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .id(application.getId())
                 .jobId(application.getJobId())
                 .jobTitle(job.getTitle())
-                .clientUsername(clientUser.getName())
-                .freelancerUsername(freelancerUser.getName())
+                .clientUsername(clientUser.getUsername())
+                .freelancerUsername(freelancerUser.getUsername())
                 .status(application.getStatus().toString())
                 .completedAt(application.getUpdatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+                .jobDone(job.getDone() != null ? job.getDone() : false) // Thêm job done status
+                .jobStatus(job.getStatus() != null ? job.getStatus().toString() : "UNKNOWN") // Thêm job status
                 .build();
     }
 }
