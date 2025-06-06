@@ -166,6 +166,11 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    public Page<Job> getJobsCategoryId(String categoryId, Pageable pageable) {
+        return null;
+    }
+
+    @Override
     @Transactional
     public ResponseMessage delete(String id, String username) {
         try {
