@@ -160,4 +160,21 @@ public class JobController {
                     .body(new ResponseMessage(400, "Lỗi khi lấy danh sách công việc: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/private/get-jobs-by-user")
+    public ResponseEntity<?> getAllJobsByAdmin(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<JobDetail> jobsPage = jobService.getJobsByUserId(username, pageable);
+            return ResponseEntity.ok(jobsPage);
+        } catch (Exception e) {
+            log.error("Lỗi lấy danh sách công việc (admin): {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi lấy danh sách công việc: " + e.getMessage()));
+        }
+    }
 }
