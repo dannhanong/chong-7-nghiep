@@ -58,8 +58,6 @@ public class JobController {
         }
     }
 
-
-
     @GetMapping("/public/get-jobs-posted-last-24-hours")
     public ResponseEntity<?> getJobsPostedLast24Hours() {
         try {

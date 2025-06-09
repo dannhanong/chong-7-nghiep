@@ -5,27 +5,33 @@ import pandas as pd
 from recommend_service.db.mongodb import MongoDB
 from recommend_service.core.recommendation.models.content_based import ContentBasedRecommender
 from recommend_service.core.recommendation.models.collaborative import CollaborativeRecommender
+from recommend_service.core.recommendation.models.semantic_content_based import SemanticContentBasedRecommender
 import logging
 from typing import Dict, List, Any, Optional
 from recommend_service.utils.user_utils import get_user_id_from_username, get_email_from_username
 from recommend_service.config.settings import settings
 import json
+from recommend_service.utils.category_utils import get_category_info_by_category_id
+from recommend_service.utils.user_utils import get_user_info_by_user_id
 
 logger = logging.getLogger(__name__)
 
 class HybridRecommender:
-    def __init__(self, content_weight=0.7, collab_weight=0.3):
+    def __init__(self, content_weight=0.3, semantic_weight=0.5, collab_weight=0.3):
         """
         Khởi tạo hệ thống gợi ý kết hợp (hybrid)
         
         Args:
             content_weight: Trọng số cho content-based recommendations
+            semantic_weight: Trọng số cho semantic recommendations
             collab_weight: Trọng số cho collaborative recommendations
         """
         self.db = MongoDB()
         self.content_based = ContentBasedRecommender(use_cache=True)
         self.collaborative = CollaborativeRecommender()
+        self.semantic_recommender = SemanticContentBasedRecommender()
         self.content_weight = content_weight
+        self.semantic_weight = semantic_weight
         self.collab_weight = collab_weight
 
     def recommend_jobs(self, 
@@ -44,7 +50,6 @@ class HybridRecommender:
             List các công việc được gợi ý
         """
 
-        start_time = datetime.now()
         limit = size * 3  # Lấy nhiều hơn để đảm bảo đủ sau khi lọc
 
         try:
@@ -76,6 +81,18 @@ class HybridRecommender:
                     if self._apply_filters(job, filters)
                 }
 
+            semantic_recommendations = {}
+            if user_profile:
+                semantic_results = self.semantic_recommender.get_profile_recommendations(
+                    profile_data=user_profile,
+                    limit=limit
+                )
+                semantic_recommendations = {
+                    str(job['_id']): job.get('similarity_score', 0)
+                    for job in semantic_results
+                    if self._apply_filters(job, filters)
+                }
+
             collab_recommendations = {}
             interaction_count = self._get_user_interaction_count(user_id)
             
@@ -89,6 +106,7 @@ class HybridRecommender:
             final_recommendations = self._combine_recommendations(
                 content_recommendations, 
                 collab_recommendations,
+                semantic_recommendations,
                 limit
             )
 
@@ -108,25 +126,32 @@ class HybridRecommender:
 
             paged_results = enriched_jobs[start_idx:end_idx]
 
-            process_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+            # Trả về user info thay vì user_id trong thông tin job
+            for job in paged_results:
+                if 'userId' in job:
+                    user_info = get_user_info_by_user_id(job['userId'])
+                    if user_info:
+                        job['user'] = user_info
+                        del job['userId']
+                    else:
+                        job['user'] = None
+                if 'categoryId' in job:
+                    category_info = get_category_info_by_category_id(job['categoryId'])
+                    if category_info:
+                        job['category'] = category_info
+                        del job['categoryId']
 
-            # 4. Lấy thông tin chi tiết về các job được đề xuất
             return {
                 "content": paged_results,
-                "page_info": {
-                    "page": page,
+                "page": {
+                    "number": page,
                     "size": size,
-                    "total_elements": total_items,
-                    "total_pages": total_pages,
+                    "totalElements": total_items,
+                    "totalPages": total_pages,
                     "has_next": page < (total_pages - 1),
                     "has_previous": page > 0,
                     "number": page,
                     "number_of_elements": len(paged_results)
-                },
-                "metadata": {
-                    "query_time_ms": process_time_ms,
-                    "filters_applied": filters is not None,
-                    "authenticated": user_id is not None
                 }
             }
             
@@ -322,32 +347,22 @@ class HybridRecommender:
     def _combine_recommendations(self, 
                                content_recs: Dict[str, float], 
                                collab_recs: Dict[str, float],
+                               semantic_recs: Dict[str, float],
                                limit: int) -> Dict[str, float]:
         """
-        Kết hợp kết quả từ 2 phương pháp recommendation với trọng số
+        Kết hợp kết quả từ 3 phương pháp recommendation với trọng số
         
         Args:
             content_recs: Dictionary {job_id: score} từ content-based
             collab_recs: Dictionary {job_id: score} từ collaborative
+            semantic_recs: Dictionary {job_id: score} từ semantic
             limit: Số lượng kết quả tối đa
-            
+
         Returns:
             Dictionary {job_id: final_score} đã được kết hợp và sắp xếp
         """
         combined = {}
         
-        # Trường hợp không có đủ dữ liệu collaborative
-        if not collab_recs:
-            # Nếu không có dữ liệu collaborative, dùng 100% content-based
-            sorted_content = sorted(content_recs.items(), key=lambda x: x[1], reverse=True)
-            return {k: v for k, v in sorted_content[:limit]}
-            
-        # Trường hợp không có đủ dữ liệu content-based  
-        if not content_recs:
-            # Nếu không có dữ liệu content-based, dùng 100% collaborative
-            sorted_collab = sorted(collab_recs.items(), key=lambda x: x[1], reverse=True)
-            return {k: v for k, v in sorted_collab[:limit]}
-            
         # Chuẩn hóa điểm số (min-max normalization)
         def normalize_scores(scores):
             if not scores:
@@ -359,16 +374,31 @@ class HybridRecommender:
             return {k: (v - min_score) / (max_score - min_score) for k, v in scores.items()}
         
         normalized_content = normalize_scores(content_recs)
+        normalized_semantic = normalize_scores(semantic_recs)
         normalized_collab = normalize_scores(collab_recs)
+
+        effective_content_weight = self.content_weight if content_recs else 0
+        effective_semantic_weight = self.semantic_weight if semantic_recs else 0
+        effective_collab_weight = self.collab_weight if collab_recs else 0
+
+        total_weight = effective_content_weight + effective_semantic_weight + effective_collab_weight
+
+        if total_weight == 0:
+            return {}
+        
+        effective_content_weight = self.content_weight / total_weight
+        effective_semantic_weight = self.semantic_weight / total_weight
+        effective_collab_weight = self.collab_weight / total_weight
         
         # Kết hợp với trọng số
-        all_job_ids = set(normalized_content.keys()) | set(normalized_collab.keys())
-        
+        all_job_ids = set(normalized_content.keys()) | set(normalized_semantic.keys()) | set(normalized_collab.keys())
+
         for job_id in all_job_ids:
-            content_score = normalized_content.get(job_id, 0) * self.content_weight
-            collab_score = normalized_collab.get(job_id, 0) * self.collab_weight
-            combined[job_id] = content_score + collab_score
-            
+            content_score = normalized_content.get(job_id, 0) * effective_content_weight
+            semantic_score = normalized_semantic.get(job_id, 0) * effective_semantic_weight
+            collab_score = normalized_collab.get(job_id, 0) * effective_collab_weight
+            combined[job_id] = content_score + semantic_score + collab_score
+
         # Sắp xếp theo điểm số và giới hạn số lượng
         sorted_recommendations = sorted(combined.items(), key=lambda x: x[1], reverse=True)
         return {k: v for k, v in sorted_recommendations[:limit]}
@@ -525,7 +555,7 @@ class HybridRecommender:
             ).get("content", [])
 
             filtered_jobs = [job for job in all_jobs
-                             if job.get('recommendation_score', 0) >= 0.25]
+                             if job.get('recommendation_score', 0) >= 0.47]
             
             filtered_job_ids = {str(job['_id']) for job in filtered_jobs}
 
