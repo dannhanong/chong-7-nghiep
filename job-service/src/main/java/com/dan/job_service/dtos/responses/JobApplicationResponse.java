@@ -18,7 +18,7 @@ public class JobApplicationResponse {
     private String id;
     private String userId;
     private String jobId;
-    private String userName;
+    private String name;
     private String title;
     private ApplicationStatus status;
     private long offerSalary;
@@ -34,6 +34,5 @@ public class JobApplicationResponse {
     private Date dob;
     private String phoneNumber;
     private String avatarId;
-    private String pathName;
     private long countApplied;
 } 

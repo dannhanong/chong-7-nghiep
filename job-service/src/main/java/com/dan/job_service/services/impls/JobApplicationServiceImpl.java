@@ -100,14 +100,14 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                     Job job = jobRepository.findById(application.getJobId())
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
                     
-                    UserProfileDetailResponse userProfile = profileServiceClient.getUserProfileByUsername(username);
+                    UserProfileDetailResponse userProfile = profileServiceClient.getProfileByUserId(application.getUserId());
                     long countApplied = countAppliedSuccess(user.getId());
                         
                     return JobApplicationResponse.builder()
                         .id(application.getId())
                         .userId(application.getUserId())
                         .jobId(application.getJobId())
-                        .userName(userProfile.getName())
+                        .name(userProfile.getName())
                         .title(job.getTitle())
                         .status(application.getStatus())
                         .offerSalary(application.getOfferSalary())
@@ -116,13 +116,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                         .appliedAt(application.getAppliedAt())
                         .updatedAt(application.getUpdatedAt())
                         .enabled(userProfile.isEnabled())
-                        .email(userProfile.getEmail())
-                        .roles(userProfile.getRoles())
-                        .linkPage(userProfile.getLinkPage())
+                        .email(user.getEmail())
+                        .linkPage(user.getLinkPage())
                         .dob(userProfile.getDob())
                         .phoneNumber(userProfile.getPhoneNumber())
                         .avatarId(userProfile.getAvatarId())
-                        .pathName(userProfile.getPathName())
                         .countApplied(countApplied)
                         .build();
                 })
@@ -149,14 +147,14 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
             .map(application -> {
                 UserDetailToCreateJob user = identityServiceClient.getUserById(application.getUserId());
-                UserProfileDetailResponse userProfile = profileServiceClient.getUserProfileByUsername(user.getUsername());
+                UserProfileDetailResponse userProfile = profileServiceClient.getProfileByUserId(application.getUserId());
                 long countApplied = countAppliedSuccess(application.getUserId());
                 
                 return JobApplicationResponse.builder()
                     .id(application.getId())
                     .userId(application.getUserId())
                     .jobId(application.getJobId())
-                    .userName(userProfile.getName())
+                    .name(userProfile.getName())
                     .title(job.getTitle())
                     .status(application.getStatus())
                     .offerSalary(application.getOfferSalary())
@@ -165,13 +163,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                     .appliedAt(application.getAppliedAt())
                     .updatedAt(application.getUpdatedAt())
                     .enabled(userProfile.isEnabled())
-                    .email(userProfile.getEmail())
-                    .roles(userProfile.getRoles())
-                    .linkPage(userProfile.getLinkPage())
+                    .email(user.getEmail())
+                    .linkPage(user.getLinkPage())
                     .dob(userProfile.getDob())
                     .phoneNumber(userProfile.getPhoneNumber())
                     .avatarId(userProfile.getAvatarId())
-                    .pathName(userProfile.getPathName())
                     .countApplied(countApplied)
                     .build();
             })
