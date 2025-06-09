@@ -87,4 +87,9 @@ public class JobApplicationController {
                     .body(new ResponseMessage(400, "Lỗi khi cập nhật trạng thái đơn ứng tuyển: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/public/count-applied/{userId}")
+    public Long countApplied(@PathVariable String userId) {
+        return jobApplicationService.countAppliedSuccess(userId);
+    }
 }

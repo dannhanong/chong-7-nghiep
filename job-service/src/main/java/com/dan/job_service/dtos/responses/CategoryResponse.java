@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,4 +22,5 @@ public class CategoryResponse {
     String description;
     CategoryResponse parent;
     Integer totalJob;
+    List<CategoryResponse> childrens;
 }

@@ -116,6 +116,17 @@ public class CategoryServiceImpl implements CategoryService {
                     .orElse(null);
         }
 
+        // Get child categories
+        List<CategoryResponse> childCategories = categoryRepository.findByParentId(category.getId())
+                .stream()
+                .map(childCategory -> CategoryResponse.builder()
+                        .id(childCategory.getId())
+                        .name(childCategory.getName())
+                        .description(childCategory.getDescription())
+                        .totalJob(jobRepository.countByCategoryId(childCategory.getId()))
+                        .build())
+                .toList();
+
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
@@ -127,6 +138,7 @@ public class CategoryServiceImpl implements CategoryService {
                         .totalJob(jobRepository.countByCategoryId(pCategory.getId()))
                         .build() : null)
                 .totalJob(jobRepository.countByCategoryId(category.getId()))
+                .childrens(childCategories)
                 .build();
     }
 
@@ -140,7 +152,34 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Page<CategoryResponse> getAllCategories(String keyword, Pageable pageable) {
-        return categoryRepository.findAllByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword, pageable)
-            .map(this::fromCategoryToCategoryResponse);
+        return categoryRepository.findAll(pageable)
+            .map(category -> {
+                List<CategoryResponse> childCategories = categoryRepository.findByParentId(category.getId())
+                    .stream()
+                    .map(childCategory -> CategoryResponse.builder()
+                        .id(childCategory.getId())
+                        .name(childCategory.getName())
+                        .description(childCategory.getDescription())
+                        .totalJob(jobRepository.countByCategoryId(childCategory.getId()))
+                        .build())
+                    .toList();
+
+                return CategoryResponse.builder()
+                    .id(category.getId())
+                    .name(category.getName())
+                    .description(category.getDescription())
+                    .parent(category.getParentId() != null ? 
+                        categoryRepository.findById(category.getParentId())
+                            .map(parentCategory -> CategoryResponse.builder()
+                                .id(parentCategory.getId())
+                                .name(parentCategory.getName())
+                                .description(parentCategory.getDescription())
+                                .totalJob(jobRepository.countByCategoryId(parentCategory.getId()))
+                                .build())
+                            .orElse(null) : null)
+                    .totalJob(jobRepository.countByCategoryId(category.getId()))
+                    .childrens(childCategories)
+                    .build();
+            });
     }
 }

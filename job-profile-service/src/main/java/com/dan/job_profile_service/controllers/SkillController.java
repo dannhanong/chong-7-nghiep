@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/jp/skills")
 @RequiredArgsConstructor
@@ -73,5 +75,17 @@ public class SkillController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseMessage> deleteSkill(@PathVariable String id) {
         return ResponseEntity.ok(skillService.delete(id));
+    }
+
+    @GetMapping("public/get/{userId}")
+    public ResponseEntity<?> getSkillByUserId(@PathVariable String userId) {
+        try {
+            List<Skill> skills = skillService.getSkillByUserId(userId);
+            return ResponseEntity.ok(skills);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new ResponseMessage(400, "Không tìm thấy kỹ năng: " + e.getMessage()));
+        }
     }
 }

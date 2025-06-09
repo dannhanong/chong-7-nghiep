@@ -9,6 +9,7 @@ import com.dan.job_profile_service.repositories.SkillRepository;
 import com.dan.job_profile_service.services.SkillService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -93,5 +94,11 @@ public class SkillServiceImpl implements SkillService {
                     .message("Xóa học vấn thất bại " + e.getMessage())
                     .build();
         }
+    }
+
+    @Override
+    public List<Skill> getSkillByUserId(String userId) {
+        identityServiceClient.getUserById(userId);
+        return skillRepository.findByUserId(userId);
     }
 }

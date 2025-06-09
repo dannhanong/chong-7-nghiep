@@ -27,8 +27,11 @@ import com.dan.job_service.models.Job;
 import com.dan.job_service.models.User;
 import com.dan.job_service.repositories.CategoryRepository;
 import com.dan.job_service.repositories.JobRepository;
+import com.dan.job_service.repositories.JobProgressRepository;
 import com.dan.job_service.services.DateFormatter;
 import com.dan.job_service.services.JobService;
+import com.dan.job_service.dtos.enums.JobStatus;
+import com.dan.job_service.models.JobProgress;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -44,6 +47,8 @@ public class JobServiceImpl implements JobService {
     private IdentityServiceClient identityServiceClient;
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
+    @Autowired
+    private JobProgressRepository jobProgressRepository;
 
     @Override
     @Transactional
@@ -60,7 +65,7 @@ public class JobServiceImpl implements JobService {
                 throw new RuntimeException("Lương tối thiểu không được lớn hơn lương tối đa");
             }
 
-            jobRepository.save(Job.builder()
+            Job newJob = Job.builder()
                     .userId(userId)
                     .categoryId(category.getId())
                     .title(jobRequest.title())
@@ -78,7 +83,17 @@ public class JobServiceImpl implements JobService {
                     .updatedAt(LocalDateTime.now())
                     .workingType(jobRequest.workingType())
                     .workingForm(jobRequest.workingForm())
-                    .build());
+                    .build();
+            Job savedJob = jobRepository.save(newJob);
+
+            // Tạo tiến dộ công việc
+            JobProgress initialProgress = JobProgress.builder()
+                    .jobId(savedJob.getId())
+                    .userId(userId)
+                    .status(JobStatus.SEARCHING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            jobProgressRepository.save(initialProgress);
 
             return new ResponseMessage(200, "Tạo công việc thành công");
         } catch (Exception e) {
@@ -163,6 +178,11 @@ public class JobServiceImpl implements JobService {
             log.error("Lỗi cập nhật công việc ID {}: {}", id, e.getMessage(), e);
             throw e;
         }
+    }
+
+    @Override
+    public Page<Job> getJobsCategoryId(String categoryId, Pageable pageable) {
+        return null;
     }
 
     @Override
@@ -259,6 +279,16 @@ public class JobServiceImpl implements JobService {
             log.error("Lỗi lấy danh sách công việc: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    @Override
+    public Page<JobDetail> getJobsByUserId(String username, Pageable pageable) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
+        Page<Job> jobsPage = jobRepository.findJobsByUserIdAndActiveTrue(userId, pageable);
+        List<JobDetail> jobDetails = jobsPage.getContent().stream()
+                .map(this::fromJobToJobDetail)
+                .collect(Collectors.toList());
+        return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
     }
 
     private JobDetail fromJobToJobDetail(Job job) {
