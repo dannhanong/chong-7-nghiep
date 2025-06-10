@@ -175,4 +175,32 @@ public class JobController {
                     .body(new ResponseMessage(400, "Lỗi khi lấy danh sách công việc: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/private/{jobId}/mark-done")
+    public ResponseEntity<?> markJobAsDone(@PathVariable String jobId, HttpServletRequest request) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            jobService.markJobAsDone(jobId, username);
+            log.info("Job {} đã được đánh dấu hoàn thành bởi người dùng: {}", jobId, username);
+            return ResponseEntity.ok(new ResponseMessage(200, "Đánh dấu công việc hoàn thành thành công"));
+        } catch (Exception e) {
+            log.error("Lỗi đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi đánh dấu công việc hoàn thành: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/private/{jobId}/mark-undone")
+    public ResponseEntity<?> markJobAsUndone(@PathVariable String jobId, HttpServletRequest request) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            jobService.markJobAsUndone(jobId, username);
+            log.info("Job {} đã được hủy đánh dấu hoàn thành bởi người dùng: {}", jobId, username);
+            return ResponseEntity.ok(new ResponseMessage(200, "Hủy đánh dấu công việc hoàn thành thành công"));
+        } catch (Exception e) {
+            log.error("Lỗi hủy đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi hủy đánh dấu công việc hoàn thành: " + e.getMessage()));
+        }
+    }
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="dataSourceStorageLocal" created-in="IU-241.14494.240">
+    <data-source name="job-profile-service@103.216.117.244" uuid="16b92bd0-7849-4d74-b6c3-5410f28753ee">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MONGO" />
+      <user-name>root</user-name>
+      <schema-mapping />
+    </data-source>
+    <data-source name="jobs_job@103.216.117.244" uuid="e881d00a-a98b-4844-8502-205abe23c049">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MONGO" />
+      <user-name>root</user-name>
+      <schema-mapping />
+    </data-source>
+    <data-source name="mongodb@localhost" uuid="57a63301-deef-43eb-9437-d3cf2d98f35a">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MONGO" />
+      <schema-mapping />
+    </data-source>
+  </component>
+</project>

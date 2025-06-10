@@ -353,4 +353,65 @@ public class JobServiceImpl implements JobService {
                 .sumJob(sumJob) // Gán số lượng job vào đây
                 .build();
     }
+
+    @Override
+    @Transactional
+    public ResponseMessage markJobAsDone(String jobId, String username) {
+        try {
+            Job job = jobRepository.findById(jobId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+            
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+            String userId = user.getId();
+            
+            // Kiểm tra quyền: chỉ chủ job mới có thể đánh dấu hoàn thành
+            if (!userId.equals(job.getUserId())) {
+                throw new RuntimeException("Bạn không phải là người tạo công việc này");
+            }
+            
+            // Kiểm tra job đã active chưa
+            if (job.getActive() == null || !job.getActive()) {
+                throw new RuntimeException("Công việc chưa được kích hoạt");
+            }
+            
+            job.setDone(true);
+            job.setUpdatedAt(LocalDateTime.now());
+            jobRepository.save(job);
+            
+            log.info("Job {} đã được đánh dấu hoàn thành bởi user {}", jobId, username);
+            return new ResponseMessage(200, "Đánh dấu công việc hoàn thành thành công");
+            
+        } catch (Exception e) {
+            log.error("Lỗi đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
+            throw e;
+        }
+    }
+    
+    @Override
+    @Transactional
+    public ResponseMessage markJobAsUndone(String jobId, String username) {
+        try {
+            Job job = jobRepository.findById(jobId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+            
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+            String userId = user.getId();
+            
+            // Kiểm tra quyền: chỉ chủ job mới có thể hủy đánh dấu hoàn thành
+            if (!userId.equals(job.getUserId())) {
+                throw new RuntimeException("Bạn không phải là người tạo công việc này");
+            }
+            
+            job.setDone(false);
+            job.setUpdatedAt(LocalDateTime.now());
+            jobRepository.save(job);
+            
+            log.info("Job {} đã được hủy đánh dấu hoàn thành bởi user {}", jobId, username);
+            return new ResponseMessage(200, "Hủy đánh dấu công việc hoàn thành thành công");
+            
+        } catch (Exception e) {
+            log.error("Lỗi hủy đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
+            throw e;
+        }
+    }
 }
