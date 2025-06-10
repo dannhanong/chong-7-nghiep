@@ -176,6 +176,29 @@ public class JobController {
         }
     }
 
+    @GetMapping("/private/get-applied-jobs")
+    public ResponseEntity<?> getAppliedJobs(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<JobDetail> appliedJobsPage = jobService.getAppliedJobs(username, pageable);
+            
+            if (appliedJobsPage.isEmpty()) {
+                return ResponseEntity.ok(new ResponseMessage(200, "Bạn chưa ứng tuyển công việc nào"));
+            }
+            
+            return ResponseEntity.ok(appliedJobsPage);
+        } catch (Exception e) {
+            log.error("Lỗi lấy danh sách công việc đã ứng tuyển: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi lấy danh sách công việc đã ứng tuyển: " + e.getMessage()));
+        }
+    }
+    
+
     @PutMapping("/private/{jobId}/mark-done")
     public ResponseEntity<?> markJobAsDone(@PathVariable String jobId, HttpServletRequest request) {
         try {
