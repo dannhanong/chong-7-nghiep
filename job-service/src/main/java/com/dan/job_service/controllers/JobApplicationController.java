@@ -46,7 +46,7 @@ public class JobApplicationController {
     // getJobApplicationByUserId(String userId, String username, Pageable pageable)
     // {
     @GetMapping("/private/list-application")
-    public ResponseEntity<Page<JobApplicationResponse>> getApplications(
+    public ResponseEntity<?> getApplications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             HttpServletRequest request) {
@@ -54,13 +54,13 @@ public class JobApplicationController {
             String username = jwtService.getUsernameFromRequest(request);
             if (username == null || username.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
+                        .body(new ResponseMessage(400, "Không tìm thấy người dùng"));
             }
             Pageable pageable = PageRequest.of(page, size);
             return ResponseEntity.ok(jobApplicationService.getJobApplicationByUserId(username, pageable));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
+                    .body(new ResponseMessage(400, "Không tìm thấy người dùng"));
         }
     }
 

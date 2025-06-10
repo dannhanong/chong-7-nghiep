@@ -113,7 +113,7 @@ public class JobController {
         }
     }
 
-    @GetMapping("/private/get-all-jobs")
+    @GetMapping("/admin/get-all-jobs")
     public ResponseEntity<?> getAllJobsByAdmin(
             @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) String title,

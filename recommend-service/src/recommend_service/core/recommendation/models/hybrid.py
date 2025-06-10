@@ -35,6 +35,10 @@ class HybridRecommender:
         self.semantic_weight = semantic_weight
         self.collab_weight = collab_weight
 
+        self.memory_cache = {}
+        self.memory_cache_ttl = 300
+        self.redis_client = self._init_redis()
+
     def _init_redis(self):
         """Khởi tạo redis"""
         try:
@@ -84,18 +88,18 @@ class HybridRecommender:
             user_profile = self._build_user_profile(user_id)
 
             content_recommendations = {}
-            if user_profile:
-                content_results = self.content_based.get_profile_recommendations(
-                    profile_data=user_profile,
-                    limit=limit  # Lấy nhiều hơn để đảm bảo đủ sau khi lọc
-                )
+            # if user_profile:
+            #     content_results = self.content_based.get_profile_recommendations(
+            #         profile_data=user_profile,
+            #         limit=limit  # Lấy nhiều hơn để đảm bảo đủ sau khi lọc
+            #     )
 
-                # Chuyển danh sách kết quả thành dictionary với job_id là key, score là value
-                content_recommendations = {
-                    str(job['_id']): job.get('similarity_score', 0)
-                    for job in content_results
-                    if self._apply_filters(job, filters)
-                }
+            #     # Chuyển danh sách kết quả thành dictionary với job_id là key, score là value
+            #     content_recommendations = {
+            #         str(job['_id']): job.get('similarity_score', 0)
+            #         for job in content_results
+            #         if self._apply_filters(job, filters)
+            #     }
 
             semantic_recommendations = {}
             if user_profile:
@@ -163,9 +167,7 @@ class HybridRecommender:
                     if category_info:
                         job['category'] = category_info
                         del job['categoryId']
-
-            # Loại bỏ các job của chính người dùng
-            # paged_results = [job for job in paged_results if job not in jobs_to_remove]
+                        
             for job in jobs_to_remove:
                 paged_results.remove(job)
 
@@ -198,9 +200,8 @@ class HybridRecommender:
             size: Số lượng công việc trên mỗi trang
             
         Returns:
-            Kết quả gợi ý với định dạng phân trang
+            Chi tiết công việc và danh sách các công việc tương tự có phân trang
         """
-        start_time = datetime.now()
         limit = size * 3
 
         try:
@@ -211,12 +212,14 @@ class HybridRecommender:
                 return self._create_empty_page_result(page, size, error="Invalid job_id format")
 
             jobs_collection = self.db.get_collection(settings.MONGODB_JOB_DATABASE, settings.MONGODB_JOBS_COLLECTION)
-            job = jobs_collection.find_one({"_id": object_job_id})
+            original_job = jobs_collection.find_one({"_id": object_job_id})
 
-            if not job:
+            if not original_job:
                 logger.warning(f"Job ID {job_id} không tồn tại")
                 return self._create_empty_page_result(page, size, error="Job not found")
-            
+
+            original_job_serialized = self._serialize_mongodb_doc(original_job)
+
             content_results = self.content_based.get_job_recommendations(
                 job_id=job_id,
                 limit=limit,
@@ -235,16 +238,16 @@ class HybridRecommender:
                     interaction_count = self._get_user_interaction_count(user_id)
 
                     if interaction_count >= 3:
-                        collab_results = self.collaborative.recommend(username, limit=limit)
-                        collab_recommendations   = {
+                        collab_results = self.collaborative.recommend(username=username, limit=limit)
+                        collab_recommendations = {
                             job_id: score
                             for job_id, score in collab_results.items()
                         }
 
-            final_recommendations = self._combine_recommendations(
+            final_recommendations = self._combine_recommendations_similar(
                 content_recommendations, 
                 collab_recommendations,
-                limit
+                limit=limit,
             )
 
             # Lấy thông tin chi tiết
@@ -263,27 +266,29 @@ class HybridRecommender:
             end_idx = min(start_idx + size, total_items)
             
             paged_results = enriched_jobs[start_idx:end_idx]
-            
-            process_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
-            
+
+            # Trả về user info thay vì user_id trong thông tin job
+            for similar_job in paged_results:
+                if 'userId' in similar_job:
+                    user_info = get_user_info_by_user_id(similar_job['userId'])
+                    if user_info:
+                        print(f"Enriching job {similar_job['_id']} with user info: {user_info}")
+                        similar_job['user'] = user_info
+                        del similar_job['userId']
+                    else:
+                        similar_job['user'] = None
+
+                if 'categoryId' in similar_job:
+                    category_info = get_category_info_by_category_id(similar_job['categoryId'])
+                    if category_info:
+                        similar_job['category'] = category_info
+                        del similar_job['categoryId']
+
+                del similar_job['_class']
+
             return {
-                "content": paged_results,
-                "page_info": {
-                    "page": page,
-                    "size": size,
-                    "total_elements": total_items,
-                    "total_pages": total_pages,
-                    "has_next": page < (total_pages - 1),
-                    "has_previous": page > 0,
-                    "number": page,
-                    "number_of_elements": len(paged_results)
-                },
-                "metadata": {
-                    "query_time_ms": process_time_ms,
-                    "filters_applied": False,
-                    "authenticated": username is not None,
-                    "source_job_id": job_id
-                }
+                "job": original_job_serialized,
+                "similars": paged_results,
             }
         except Exception as e:
             logger.error(f"Error in hybrid similar jobs recommendation: {e}")
@@ -291,10 +296,23 @@ class HybridRecommender:
 
     def _build_user_profile(self, user_id: str) -> Dict:
         """Xây dựng profile người dùng từ các thông tin skill, experience, education"""
+        profile_cache_key = f"user_job_profile:{user_id}"
+
+        if self.redis_client:
+            cached_profile = self.redis_client.get(profile_cache_key)
+            if cached_profile:
+                try:
+                    return json.loads(cached_profile)
+                except json.JSONDecodeError as e:
+                    logger.error(f"Error decoding cached profile for user {user_id}: {e}")
+
         try:
             print(f"Building profile for user_id: {user_id}")
             # Lấy thông tin kỹ năng
-            skills_collection = self.db.get_collection(settings.MONGODB_JOB_PROFILE_DATABASE, settings.MONGODB_JOB_PROFILE_SKILL_COLLECTION)
+            skills_collection = self.db.get_collection(
+                settings.MONGODB_JOB_PROFILE_DATABASE, 
+                settings.MONGODB_JOB_PROFILE_SKILL_COLLECTION
+            )
 
             if skills_collection is None:
                 logger.error(f"Skills collection not found in database: {settings.MONGODB_JOB_PROFILE_DATABASE}.{settings.MONGODB_JOB_PROFILE_SKILL_COLLECTION}")
@@ -303,7 +321,11 @@ class HybridRecommender:
             skills = list(skills_collection.find({"userId": user_id, "deletedAt": None}))
             
             # Lấy thông tin kinh nghiệm làm việc
-            experiences_collection = self.db.get_collection(settings.MONGODB_JOB_PROFILE_DATABASE, settings.MONGODB_JOB_PROFILE_EXPERIENCE_COLLECTION)
+            experiences_collection = self.db.get_collection(
+                settings.MONGODB_JOB_PROFILE_DATABASE, 
+                settings.MONGODB_JOB_PROFILE_EXPERIENCE_COLLECTION
+            )
+            
             experiences = list(experiences_collection.find({"userId": user_id, "deletedAt": None}))
 
             print(f"Found {len(skills)} skills and {len(experiences)} experiences for user_id: {user_id}")
@@ -312,12 +334,21 @@ class HybridRecommender:
             skill_names = [skill['skill_name'] for skill in skills]
             job_titles = [exp['company_name'] for exp in experiences]
             
-            return {
+            profile = {
                 'skills': ' '.join(skill_names),
                 'job_titles': ' '.join(job_titles),
                 'experience': ' '.join([exp.get('description', '') for exp in experiences if 'description' in exp]),
                 'skill_level': {skill['skill_name']: skill['years_experience'] for skill in skills if 'years_experience' in skill}
             }
+
+            if self.redis_client and profile:
+                self.redis_client.setex(
+                    profile_cache_key,
+                    21600,
+                    json.dumps(profile)
+                )
+
+            return profile
         except Exception as e:
             logger.error(f"Error building user profile: {e}")
             return {}
@@ -426,6 +457,59 @@ class HybridRecommender:
             semantic_score = normalized_semantic.get(job_id, 0) * effective_semantic_weight
             collab_score = normalized_collab.get(job_id, 0) * effective_collab_weight
             combined[job_id] = content_score + semantic_score + collab_score
+
+        # Sắp xếp theo điểm số và giới hạn số lượng
+        sorted_recommendations = sorted(combined.items(), key=lambda x: x[1], reverse=True)
+        return {k: v for k, v in sorted_recommendations[:limit]}
+    
+    def _combine_recommendations_similar(self, 
+                               content_recs: Dict[str, float], 
+                               collab_recs: Dict[str, float],
+                               limit: int) -> Dict[str, float]:
+        """
+        Kết hợp kết quả từ 2 phương pháp recommendation với trọng số
+
+        Args:
+            content_recs: Dictionary {job_id: score} từ content-based
+            collab_recs: Dictionary {job_id: score} từ collaborative
+            limit: Số lượng kết quả tối đa
+
+        Returns:
+            Dictionary {job_id: final_score} đã được kết hợp và sắp xếp
+        """
+        combined = {}
+        
+        # Chuẩn hóa điểm số (min-max normalization)
+        def normalize_scores(scores):
+            if not scores:
+                return {}
+            min_score = min(scores.values())
+            max_score = max(scores.values())
+            if max_score == min_score:
+                return {k: 1.0 for k in scores}
+            return {k: (v - min_score) / (max_score - min_score) for k, v in scores.items()}
+        
+        normalized_content = normalize_scores(content_recs)
+        normalized_collab = normalize_scores(collab_recs)
+
+        effective_content_weight = self.content_weight if content_recs else 0
+        effective_collab_weight = self.collab_weight if collab_recs else 0
+
+        total_weight = effective_content_weight + effective_collab_weight
+
+        if total_weight == 0:
+            return {}
+        
+        effective_content_weight = self.content_weight / total_weight
+        effective_collab_weight = self.collab_weight / total_weight
+
+        # Kết hợp với trọng số
+        all_job_ids = set(normalized_content.keys()) | set(normalized_collab.keys())
+
+        for job_id in all_job_ids:
+            content_score = normalized_content.get(job_id, 0) * effective_content_weight
+            collab_score = normalized_collab.get(job_id, 0) * effective_collab_weight
+            combined[job_id] = content_score + collab_score
 
         # Sắp xếp theo điểm số và giới hạn số lượng
         sorted_recommendations = sorted(combined.items(), key=lambda x: x[1], reverse=True)
