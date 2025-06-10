@@ -92,4 +92,13 @@ public class JobApplicationController {
     public Long countApplied(@PathVariable String userId) {
         return jobApplicationService.countAppliedSuccess(userId);
     }
+
+    @GetMapping("/applications/{applicationId}/detail")
+    public ResponseEntity<?> getJobApplicationDetail(@PathVariable String applicationId) {
+        try {
+            return ResponseEntity.ok(jobApplicationService.getJobApplicationDetail(applicationId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin đơn ứng tuyển: " + e.getMessage()));
+        }
+    }
 }
