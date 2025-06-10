@@ -32,6 +32,8 @@ import com.dan.job_service.services.DateFormatter;
 import com.dan.job_service.services.JobService;
 import com.dan.job_service.dtos.enums.JobStatus;
 import com.dan.job_service.models.JobProgress;
+import com.dan.job_service.repositories.JobApplicationRepository;
+import com.dan.job_service.models.JobApplication;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -49,6 +51,8 @@ public class JobServiceImpl implements JobService {
     private KafkaTemplate<String, Object> kafkaTemplate;
     @Autowired
     private JobProgressRepository jobProgressRepository;
+    @Autowired
+    private JobApplicationRepository jobApplicationRepository;
 
     @Override
     @Transactional
@@ -289,6 +293,29 @@ public class JobServiceImpl implements JobService {
                 .map(this::fromJobToJobDetail)
                 .collect(Collectors.toList());
         return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
+    }
+
+    @Override
+    public Page<JobDetail> getAppliedJobs(String username, Pageable pageable) {
+        try {
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+            String userId = user.getId();
+
+            Page<JobApplication> userApplications = jobApplicationRepository.findByUserId(userId, pageable);
+            List<JobDetail> appliedJobs = userApplications.getContent().stream()
+                .map(application -> {
+                    Job job = jobRepository.findById(application.getJobId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công việc"));
+                    return fromJobToJobDetail(job);
+                })
+                .collect(Collectors.toList());
+            
+            log.info("Found {} applied jobs for user {}", appliedJobs.size(), username);
+            return new PageImpl<>(appliedJobs, pageable, userApplications.getTotalElements());
+        } catch (Exception e) {
+            log.error("Error getting applied jobs for user {}: {}", username, e.getMessage(), e);
+            throw e;
+        }
     }
 
     private JobDetail fromJobToJobDetail(Job job) {

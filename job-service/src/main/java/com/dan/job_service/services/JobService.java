@@ -26,4 +26,5 @@ public interface JobService {
     Page<JobDetail> getJobsByUserId(String username, Pageable pageable);
     ResponseMessage userUpdateJob(String id, JobRequest jobRequest, String username);
     Page<Job> getJobsCategoryId(String categoryId, Pageable pageable);
+    Page<JobDetail> getAppliedJobs(String username, Pageable pageable);
 }
