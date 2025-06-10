@@ -30,4 +30,5 @@ public interface JobService {
     ResponseMessage markJobAsDone(String jobId, String username);
     
     ResponseMessage markJobAsUndone(String jobId, String username);
+    Page<JobDetail> getAppliedJobs(String username, Pageable pageable);
 }
