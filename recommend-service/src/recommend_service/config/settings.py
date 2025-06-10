@@ -40,4 +40,8 @@ class Settings(BaseSettings):
     EUREKA_HEARTBEAT_INTERVAL: int = int(os.getenv("EUREKA_HEARTBEAT_INTERVAL", 30))
     EUREKA_RENEWAL_INTERVAL: int = int(os.getenv("EUREKA_RENEWAL_INTERVAL", 30))
     EUREKA_INSTANCE_ID: str = os.getenv("EUREKA_INSTANCE_ID", f"{EUREKA_APP_NAME}:{uuid.uuid4()}")
+
+    # Cài đặt cho Redis
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
 settings = Settings()

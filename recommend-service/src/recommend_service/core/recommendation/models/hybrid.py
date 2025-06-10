@@ -13,6 +13,7 @@ from recommend_service.config.settings import settings
 import json
 from recommend_service.utils.category_utils import get_category_info_by_category_id
 from recommend_service.utils.user_utils import get_user_info_by_user_id
+import redis
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,21 @@ class HybridRecommender:
         self.content_weight = content_weight
         self.semantic_weight = semantic_weight
         self.collab_weight = collab_weight
+
+    def _init_redis(self):
+        """Khởi tạo redis"""
+        try:
+            client = redis.Redis(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                decode_responses=True,
+                socket_timeout=5
+            )
+            client.ping()
+            return client
+        except Exception as e:
+            logger.error(f"Không thể kết nối đến Redis: {e}")
+            return None
 
     def recommend_jobs(self, 
                       username: None, 
@@ -126,20 +142,32 @@ class HybridRecommender:
 
             paged_results = enriched_jobs[start_idx:end_idx]
 
+            jobs_to_remove = []
+
             # Trả về user info thay vì user_id trong thông tin job
             for job in paged_results:
                 if 'userId' in job:
-                    user_info = get_user_info_by_user_id(job['userId'])
-                    if user_info:
-                        job['user'] = user_info
-                        del job['userId']
+                    if job['userId'] == user_id:
+                        jobs_to_remove.append(job)
                     else:
-                        job['user'] = None
+                        user_info = get_user_info_by_user_id(job['userId'])
+                        if user_info:
+                            print(f"Enriching job {job['_id']} with user info: {user_info}")
+                            job['user'] = user_info
+                            del job['userId']
+                        else:
+                            job['user'] = None
+                            
                 if 'categoryId' in job:
                     category_info = get_category_info_by_category_id(job['categoryId'])
                     if category_info:
                         job['category'] = category_info
                         del job['categoryId']
+
+            # Loại bỏ các job của chính người dùng
+            # paged_results = [job for job in paged_results if job not in jobs_to_remove]
+            for job in jobs_to_remove:
+                paged_results.remove(job)
 
             return {
                 "content": paged_results,

@@ -24,7 +24,6 @@ import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
 import com.dan.job_service.http_clients.IdentityServiceClient;
 import com.dan.job_service.models.Category;
 import com.dan.job_service.models.Job;
-import com.dan.job_service.models.User;
 import com.dan.job_service.repositories.CategoryRepository;
 import com.dan.job_service.repositories.JobRepository;
 import com.dan.job_service.repositories.JobProgressRepository;
