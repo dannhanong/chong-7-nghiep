@@ -14,4 +14,7 @@ public interface ProfileServiceClient {
 
     @GetMapping("profile/public/get-detail/{username}")
     UserProfileDetailResponse getUserProfileByUsername(@PathVariable("username") String username);
+
+    @GetMapping("profile/get/{userId}")
+    UserProfileDetailResponse getProfileByUserId(@PathVariable("userId") String userId);
 }

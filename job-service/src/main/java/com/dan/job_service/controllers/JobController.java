@@ -160,7 +160,7 @@ public class JobController {
     }
 
     @GetMapping("/private/get-jobs-by-user")
-    public ResponseEntity<?> getAllJobsByAdmin(
+    public ResponseEntity<?> getAllJobsByUser(
             HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
