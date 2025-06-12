@@ -1,5 +1,6 @@
 package com.dan.job_profile_service.services.impl;
 
+import com.dan.events.dtos.JobProfileEvent;
 import com.dan.job_profile_service.dtos.requests.ExperienceRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.http_clients.IdentityServiceClient;
@@ -8,6 +9,7 @@ import com.dan.job_profile_service.repositories.ExperienceRepository;
 import com.dan.job_profile_service.services.ExperienceService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.List;
 public class ExperienceServiceImpl implements ExperienceService {
     private final ExperienceRepository experienceRepository;
     private final IdentityServiceClient identityServiceClient;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
     public List<Experience> getAllExperiences(String username) {
@@ -46,7 +49,13 @@ public class ExperienceServiceImpl implements ExperienceService {
                     .description(experienceRequest.getDescription())
                     .achievements(experienceRequest.getAchievements())
                     .build();
-         return experienceRepository.save(newExperience);
+        Experience savedExperience = experienceRepository.save(newExperience);
+
+        JobProfileEvent jobProfileEvent = JobProfileEvent.builder()
+                .userId(userId)
+                .build();
+        kafkaTemplate.send("profile_created", jobProfileEvent);
+        return savedExperience;
     }
 
     @Override
@@ -62,7 +71,12 @@ public class ExperienceServiceImpl implements ExperienceService {
             existingExperience.setDescription(experienceRequest.getDescription());
             existingExperience.setAchievements(experienceRequest.getAchievements());
 
-            return experienceRepository.save(existingExperience);
+            Experience updatedExperience = experienceRepository.save(existingExperience);
+            JobProfileEvent jobProfileEvent = JobProfileEvent.builder()
+                    .userId(updatedExperience.getUserId())
+                    .build();
+            kafkaTemplate.send("profile_updated", jobProfileEvent);
+            return updatedExperience;
     }
 
     @Override
@@ -76,7 +90,7 @@ public class ExperienceServiceImpl implements ExperienceService {
         } catch (Exception e) {
             return ResponseMessage.builder()
                     .status(500)
-                    .message("Xóa kinh nghiệm thất bại"+e.getMessage())
+                    .message("Xóa kinh nghiệm thất bại" + e.getMessage())
                     .build();
         }
     }

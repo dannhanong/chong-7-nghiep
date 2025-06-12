@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.dan.job_service.dtos.enums.WorkingForm;
 import com.dan.job_service.dtos.enums.WorkingType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -73,5 +74,6 @@ public class Job {
     LocalDateTime updatedAt;
 
     LocalDateTime deletedAt;
+
     String contentUri;
 }

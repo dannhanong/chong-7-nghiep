@@ -5,6 +5,8 @@ import logging
 from recommend_service.api.router import router
 from recommend_service.config.settings import settings
 import py_eureka_client.eureka_client as eureka_client
+from recommend_service.core.recommendation.models.semantic_content_based import SemanticContentBasedRecommender
+from recommend_service.core.kafka.kafka_consumer import KafkaEventConsumer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,6 +16,9 @@ app = FastAPI(
     description="",
     version="0.1.0",
 )
+
+semantic_recommender = None
+kafka_consumer = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,6 +37,26 @@ def health_check():
 @app.on_event("startup")
 async def startup_event():
     """Khi ứng dụng khởi động, đăng ký với Eureka"""
+    global semantic_recommender, kafka_consumer
+
+    # Khởi tạo semantic recommender
+    try:
+        logger.info("Initializing Semantic Content Based Recommender...")
+        semantic_recommender = SemanticContentBasedRecommender()
+        semantic_recommender.fit()  # Load/create embeddings
+        logger.info("Semantic Content Based Recommender initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize Semantic Content Based Recommender: {str(e)}")
+
+    # Khởi tạo Kafka consumer
+    try:
+        logger.info("Starting Kafka consumer...")
+        kafka_consumer = KafkaEventConsumer(semantic_recommender)
+        kafka_consumer.start()
+        logger.info("Kafka consumer started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start Kafka consumer: {str(e)}")
+
     try:
         await eureka_client.init_async(
             eureka_server=settings.EUREKA_SERVER_URL,
