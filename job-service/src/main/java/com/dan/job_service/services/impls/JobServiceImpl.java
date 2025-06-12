@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dan.events.dtos.EventAddJobDataForRecommend;
+import com.dan.events.dtos.JobEvent;
 import com.dan.job_service.dtos.requets.JobRequest;
 import com.dan.job_service.dtos.responses.JobDetail;
 import com.dan.job_service.dtos.responses.ResponseMessage;
@@ -32,7 +33,9 @@ import com.dan.job_service.services.JobService;
 import com.dan.job_service.dtos.enums.JobStatus;
 import com.dan.job_service.models.JobProgress;
 import com.dan.job_service.repositories.JobApplicationRepository;
+import com.dan.job_service.repositories.JobEmbeddingRepository;
 import com.dan.job_service.models.JobApplication;
+import com.dan.job_service.models.JobEmbedding;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -52,6 +55,8 @@ public class JobServiceImpl implements JobService {
     private JobProgressRepository jobProgressRepository;
     @Autowired
     private JobApplicationRepository jobApplicationRepository;
+    @Autowired
+    private JobEmbeddingRepository jobEmbeddingRepository;
 
     @Override
     @Transactional
@@ -98,6 +103,20 @@ public class JobServiceImpl implements JobService {
                     .build();
             jobProgressRepository.save(initialProgress);
 
+            JobEmbedding jobEmbedding = JobEmbedding.builder()
+                    .jobId(savedJob.getId())
+                    .embedding(List.of()) // Giả sử bạn sẽ cập nhật embedding sau
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+
+            jobEmbeddingRepository.save(jobEmbedding);
+
+            JobEvent jobEvent = JobEvent.builder()
+                    .eventType("CREATE")
+                    .data(savedJob)
+                    .build();
+            kafkaTemplate.send("job_created", jobEvent);
+
             return new ResponseMessage(200, "Tạo công việc thành công");
         } catch (Exception e) {
             log.error("Lỗi tạo công việc cho username {}: {}", username, e.getMessage(), e);
@@ -138,6 +157,11 @@ public class JobServiceImpl implements JobService {
 
             jobRepository.save(existingJob);
 
+            JobEvent jobEvent = JobEvent.builder()
+                    .eventType("UPDATE")
+                    .data(existingJob)
+                    .build();
+            kafkaTemplate.send("job_updated", jobEvent);
             return new ResponseMessage(200, "Cập nhật công việc thành công");
         } catch (Exception e) {
             log.error("Lỗi cập nhật công việc ID {}: {}", id, e.getMessage(), e);
@@ -195,7 +219,12 @@ public class JobServiceImpl implements JobService {
             Job job = jobRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
             UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+            if (user == null) {
+                throw new RuntimeException("Không tìm thấy người dùng");
+            }
             String userId = user.getId();
+
+            System.out.println("User ID: " + userId);
 
             if (!userId.equals(job.getUserId())) {
                 throw new RuntimeException("Bạn không phải là người tạo công việc");
@@ -204,6 +233,13 @@ public class JobServiceImpl implements JobService {
             job.setActive(false);
             job.setDeletedAt(LocalDateTime.now());
             jobRepository.save(job);
+
+            JobEvent jobEvent = JobEvent.builder()
+                    .eventType("DELETE")
+                    .data(job)
+                    .build();
+
+            kafkaTemplate.send("job_deleted", jobEvent);
 
             return new ResponseMessage(200, "Xóa công việc thành công");
         } catch (Exception e) {
@@ -440,5 +476,22 @@ public class JobServiceImpl implements JobService {
             log.error("Lỗi hủy đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
             throw e;
         }
+    }
+
+    @Override
+    public ResponseMessage testEmJob() {
+        List<Job> jobs = jobRepository.findAll();
+
+        for (Job job : jobs) {
+            JobEvent jobEvent = JobEvent.builder()
+                    .eventType("TEST_EMBEDDING")
+                    .data(job)
+                    .build();
+            kafkaTemplate.send("job_created", jobEvent);
+        }
+        return ResponseMessage.builder()
+                .status(200)
+                .message("Cập nhật embedding cho tất cả công việc thành công")
+                .build();
     }
 }

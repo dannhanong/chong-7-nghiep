@@ -102,7 +102,6 @@ public class JobController {
     public ResponseEntity<?> deleteJobById(@PathVariable String id, HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
-
             
             jobService.delete(id, username);
             return ResponseEntity.ok(new ResponseMessage(200, "Xóa công việc thành công"));

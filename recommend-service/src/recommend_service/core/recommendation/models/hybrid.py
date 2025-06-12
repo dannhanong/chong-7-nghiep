@@ -18,7 +18,7 @@ import redis
 logger = logging.getLogger(__name__)
 
 class HybridRecommender:
-    def __init__(self, content_weight=0.3, semantic_weight=0.5, collab_weight=0.3):
+    def __init__(self, content_weight=0.4, semantic_weight=0.4, collab_weight=0.2):
         """
         Khởi tạo hệ thống gợi ý kết hợp (hybrid)
         
@@ -85,7 +85,7 @@ class HybridRecommender:
                 return self._get_popular_jobs_paged(page, size, filters)
             
             # Lấy thông tin người dùng
-            user_profile = self._build_user_profile(user_id)
+            user_profile = self.build_user_profile(user_id)
 
             content_recommendations = {}
             # if user_profile:
@@ -105,6 +105,7 @@ class HybridRecommender:
             if user_profile:
                 semantic_results = self.semantic_recommender.get_profile_recommendations(
                     profile_data=user_profile,
+                    user_id=user_id,
                     limit=limit
                 )
                 semantic_recommendations = {
@@ -245,7 +246,7 @@ class HybridRecommender:
                         }
 
             final_recommendations = self._combine_recommendations_similar(
-                content_recommendations, 
+                content_recommendations,
                 collab_recommendations,
                 limit=limit,
             )
@@ -294,17 +295,17 @@ class HybridRecommender:
             logger.error(f"Error in hybrid similar jobs recommendation: {e}")
             return self._create_empty_page_result(page, size, error=str(e))
 
-    def _build_user_profile(self, user_id: str) -> Dict:
+    def build_user_profile(self, user_id: str) -> Dict:
         """Xây dựng profile người dùng từ các thông tin skill, experience, education"""
-        profile_cache_key = f"user_job_profile:{user_id}"
+        # profile_cache_key = f"user_job_profile:{user_id}"
 
-        if self.redis_client:
-            cached_profile = self.redis_client.get(profile_cache_key)
-            if cached_profile:
-                try:
-                    return json.loads(cached_profile)
-                except json.JSONDecodeError as e:
-                    logger.error(f"Error decoding cached profile for user {user_id}: {e}")
+        # if self.redis_client:
+        #     cached_profile = self.redis_client.get(profile_cache_key)
+        #     if cached_profile:
+        #         try:
+        #             return json.loads(cached_profile)
+        #         except json.JSONDecodeError as e:
+        #             logger.error(f"Error decoding cached profile for user {user_id}: {e}")
 
         try:
             print(f"Building profile for user_id: {user_id}")
@@ -341,12 +342,14 @@ class HybridRecommender:
                 'skill_level': {skill['skill_name']: skill['years_experience'] for skill in skills if 'years_experience' in skill}
             }
 
-            if self.redis_client and profile:
-                self.redis_client.setex(
-                    profile_cache_key,
-                    21600,
-                    json.dumps(profile)
-                )
+            print(f"Built profile for user {user_id}: {json.dumps(profile, indent=2)}")
+
+            # if self.redis_client and profile:
+            #     self.redis_client.setex(
+            #         profile_cache_key,
+            #         21600,
+            #         json.dumps(profile)
+            #     )
 
             return profile
         except Exception as e:
@@ -368,28 +371,38 @@ class HybridRecommender:
             return True
             
         # Lọc theo từ khóa
-        if 'keyword' in filters and filters['keyword']:
-            keyword = filters['keyword'].lower()
-
-            logger.debug(f"Applying keyword filter: {keyword}")
-
-            job_text = f"{job.get('title', '')} {job.get('description', '')} {job.get('skills', '')}".lower()
-            if keyword not in job_text:
-                return False
+        if filters.get('keyword'):
+            keyword = str(filters['keyword']).lower().strip()
+            if keyword:
+                job_text = f"{job.get('title', '')} {job.get('description', '')} {job.get('skills', '')}".lower()
+                if keyword not in job_text:
+                    return False
+                
+        # Lọc theo danh mục
+        if filters.get('category_ids'):
+            job_category_id = str(job.get('categoryId', ''))
+    
+            if filters.get('category_ids'):
+                category_ids = filters['category_ids']
+                
+                # Handle different input formats
+                if isinstance(category_ids, str):
+                    category_list = [cat.strip() for cat in category_ids.split(',') if cat.strip()]
+                elif isinstance(category_ids, list):
+                    category_list = [str(cat) for cat in category_ids]
+                else:
+                    logger.warning(f"Invalid category_ids format: {type(category_ids)}")
+                    return False
+                
+                # Check if job's category is in the allowed list
+                if job_category_id not in category_list:
+                    return False
                 
         # Lọc theo mức lương
         if 'salary_min' in filters and job.get('salaryMin', 0) < filters['salary_min']:
             return False
             
         if 'salary_max' in filters and filters['salary_max'] > 0 and job.get('salaryMax', float('inf')) > filters['salary_max']:
-            return False
-            
-        # Lọc theo danh mục
-        if 'category_id' in filters and filters['category_id'] != job.get('categoryId'):
-            return False
-            
-        # Lọc theo experience level
-        if 'experience_level' in filters and filters['experience_level'] != job.get('experienceLevel'):
             return False
             
         return True
@@ -463,15 +476,15 @@ class HybridRecommender:
         return {k: v for k, v in sorted_recommendations[:limit]}
     
     def _combine_recommendations_similar(self, 
-                               content_recs: Dict[str, float], 
-                               collab_recs: Dict[str, float],
+                               content_recs: Dict[str, float],
+                               semantic_recs: Dict[str, float],
                                limit: int) -> Dict[str, float]:
         """
         Kết hợp kết quả từ 2 phương pháp recommendation với trọng số
 
         Args:
             content_recs: Dictionary {job_id: score} từ content-based
-            collab_recs: Dictionary {job_id: score} từ collaborative
+            semantic_recs: Dictionary {job_id: score} từ semantic
             limit: Số lượng kết quả tối đa
 
         Returns:
@@ -490,26 +503,26 @@ class HybridRecommender:
             return {k: (v - min_score) / (max_score - min_score) for k, v in scores.items()}
         
         normalized_content = normalize_scores(content_recs)
-        normalized_collab = normalize_scores(collab_recs)
+        normalized_semantic = normalize_scores(semantic_recs)
 
         effective_content_weight = self.content_weight if content_recs else 0
-        effective_collab_weight = self.collab_weight if collab_recs else 0
+        effective_semantic_weight = self.semantic_weight if semantic_recs else 0
 
-        total_weight = effective_content_weight + effective_collab_weight
+        total_weight = effective_content_weight + effective_semantic_weight
 
         if total_weight == 0:
             return {}
         
         effective_content_weight = self.content_weight / total_weight
-        effective_collab_weight = self.collab_weight / total_weight
+        effective_semantic_weight = self.semantic_weight / total_weight
 
         # Kết hợp với trọng số
-        all_job_ids = set(normalized_content.keys()) | set(normalized_collab.keys())
+        all_job_ids = set(normalized_content.keys()) | set(normalized_semantic.keys())
 
         for job_id in all_job_ids:
             content_score = normalized_content.get(job_id, 0) * effective_content_weight
-            collab_score = normalized_collab.get(job_id, 0) * effective_collab_weight
-            combined[job_id] = content_score + collab_score
+            semantic_score = normalized_semantic.get(job_id, 0) * effective_semantic_weight
+            combined[job_id] = content_score + semantic_score
 
         # Sắp xếp theo điểm số và giới hạn số lượng
         sorted_recommendations = sorted(combined.items(), key=lambda x: x[1], reverse=True)
