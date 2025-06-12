@@ -64,6 +64,8 @@ public class Job {
     WorkingType workingType;
     WorkingForm workingForm;
 
+    String file;
+
     @CreatedDate
     LocalDateTime createdAt;
 

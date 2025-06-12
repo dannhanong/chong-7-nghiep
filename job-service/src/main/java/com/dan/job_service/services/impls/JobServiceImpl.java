@@ -2,9 +2,11 @@ package com.dan.job_service.services.impls;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.dan.job_service.dtos.responses.JobsLast24HoursResponse;
+import com.dan.job_service.http_clients.FileServiceClient;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,7 @@ import com.dan.job_service.dtos.enums.JobStatus;
 import com.dan.job_service.models.JobProgress;
 import com.dan.job_service.repositories.JobApplicationRepository;
 import com.dan.job_service.models.JobApplication;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -53,6 +56,8 @@ public class JobServiceImpl implements JobService {
     private JobProgressRepository jobProgressRepository;
     @Autowired
     private JobApplicationRepository jobApplicationRepository;
+    @Autowired
+    private FileServiceClient fileServiceClient;
 
     @Override
     @Transactional
@@ -88,6 +93,14 @@ public class JobServiceImpl implements JobService {
                     .workingType(jobRequest.workingType())
                     .workingForm(jobRequest.workingForm())
                     .build();
+
+            MultipartFile file = jobRequest.file();
+            if(file != null && !file.isEmpty()){
+                Map<String, String> res = fileServiceClient.uploadFile(file);
+                String fileCode = res.get("fileCode");
+                newJob.setFile(fileCode);
+            }
+
             Job savedJob = jobRepository.save(newJob);
 
             // Tạo tiến dộ công việc
@@ -373,6 +386,7 @@ public class JobServiceImpl implements JobService {
                 .applicationDeadline(job.getApplicationDeadline())
                 .status(job.getStatus())
                 .active(job.getActive())
+                .file(job.getFile())
                 .createdAt(dateFormatter.formatDate(job.getCreatedAt()))
                 .updatedAt(dateFormatter.formatDate(job.getUpdatedAt()))
                 .contentUri(job.getContentUri())

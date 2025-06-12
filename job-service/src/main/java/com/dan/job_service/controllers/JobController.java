@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +32,12 @@ public class JobController {
     @Autowired
     private JwtService jwtService;
 
-    @PostMapping("/private/create")
-    public ResponseEntity<ResponseMessage> createJob(@Valid @RequestBody JobRequest jobRequest,
+    @PostMapping(
+            value = "/private/create",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ResponseMessage> createJob(
+            @Valid @ModelAttribute JobRequest jobRequest,
             HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
@@ -133,7 +138,7 @@ public class JobController {
     }
 
     @GetMapping("/public/get-all-jobs")
-    public ResponseEntity<?> getAllJobsByUser(
+    public ResponseEntity<?> getAllJobs(
             @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) String title,
             @RequestParam(defaultValue = "0") int page,
