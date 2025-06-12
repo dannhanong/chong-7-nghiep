@@ -24,11 +24,15 @@ import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
 import com.dan.job_service.http_clients.IdentityServiceClient;
 import com.dan.job_service.models.Category;
 import com.dan.job_service.models.Job;
-import com.dan.job_service.models.User;
 import com.dan.job_service.repositories.CategoryRepository;
 import com.dan.job_service.repositories.JobRepository;
+import com.dan.job_service.repositories.JobProgressRepository;
 import com.dan.job_service.services.DateFormatter;
 import com.dan.job_service.services.JobService;
+import com.dan.job_service.dtos.enums.JobStatus;
+import com.dan.job_service.models.JobProgress;
+import com.dan.job_service.repositories.JobApplicationRepository;
+import com.dan.job_service.models.JobApplication;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -44,6 +48,10 @@ public class JobServiceImpl implements JobService {
     private IdentityServiceClient identityServiceClient;
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
+    @Autowired
+    private JobProgressRepository jobProgressRepository;
+    @Autowired
+    private JobApplicationRepository jobApplicationRepository;
 
     @Override
     @Transactional
@@ -60,7 +68,7 @@ public class JobServiceImpl implements JobService {
                 throw new RuntimeException("Lương tối thiểu không được lớn hơn lương tối đa");
             }
 
-            jobRepository.save(Job.builder()
+            Job newJob = Job.builder()
                     .userId(userId)
                     .categoryId(category.getId())
                     .title(jobRequest.title())
@@ -78,7 +86,17 @@ public class JobServiceImpl implements JobService {
                     .updatedAt(LocalDateTime.now())
                     .workingType(jobRequest.workingType())
                     .workingForm(jobRequest.workingForm())
-                    .build());
+                    .build();
+            Job savedJob = jobRepository.save(newJob);
+
+            // Tạo tiến dộ công việc
+            JobProgress initialProgress = JobProgress.builder()
+                    .jobId(savedJob.getId())
+                    .userId(userId)
+                    .status(JobStatus.SEARCHING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            jobProgressRepository.save(initialProgress);
 
             return new ResponseMessage(200, "Tạo công việc thành công");
         } catch (Exception e) {
@@ -163,6 +181,11 @@ public class JobServiceImpl implements JobService {
             log.error("Lỗi cập nhật công việc ID {}: {}", id, e.getMessage(), e);
             throw e;
         }
+    }
+
+    @Override
+    public Page<Job> getJobsCategoryId(String categoryId, Pageable pageable) {
+        return null;
     }
 
     @Override
@@ -261,6 +284,39 @@ public class JobServiceImpl implements JobService {
         }
     }
 
+    @Override
+    public Page<JobDetail> getJobsByUserId(String username, Pageable pageable) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
+        Page<Job> jobsPage = jobRepository.findJobsByUserIdAndActiveTrue(userId, pageable);
+        List<JobDetail> jobDetails = jobsPage.getContent().stream()
+                .map(this::fromJobToJobDetail)
+                .collect(Collectors.toList());
+        return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
+    }
+
+    @Override
+    public Page<JobDetail> getAppliedJobs(String username, Pageable pageable) {
+        try {
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+            String userId = user.getId();
+
+            Page<JobApplication> userApplications = jobApplicationRepository.findByUserId(userId, pageable);
+            List<JobDetail> appliedJobs = userApplications.getContent().stream()
+                .map(application -> {
+                    Job job = jobRepository.findById(application.getJobId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công việc"));
+                    return fromJobToJobDetail(job);
+                })
+                .collect(Collectors.toList());
+            
+            log.info("Found {} applied jobs for user {}", appliedJobs.size(), username);
+            return new PageImpl<>(appliedJobs, pageable, userApplications.getTotalElements());
+        } catch (Exception e) {
+            log.error("Error getting applied jobs for user {}: {}", username, e.getMessage(), e);
+            throw e;
+        }
+    }
+
     private JobDetail fromJobToJobDetail(Job job) {
         String userName = "Không xác định";
 
@@ -323,5 +379,66 @@ public class JobServiceImpl implements JobService {
                 .workingForm(job.getWorkingForm())
                 .sumJob(sumJob) // Gán số lượng job vào đây
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public ResponseMessage markJobAsDone(String jobId, String username) {
+        try {
+            Job job = jobRepository.findById(jobId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+            
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+            String userId = user.getId();
+            
+            // Kiểm tra quyền: chỉ chủ job mới có thể đánh dấu hoàn thành
+            if (!userId.equals(job.getUserId())) {
+                throw new RuntimeException("Bạn không phải là người tạo công việc này");
+            }
+            
+            // Kiểm tra job đã active chưa
+            if (job.getActive() == null || !job.getActive()) {
+                throw new RuntimeException("Công việc chưa được kích hoạt");
+            }
+            
+            job.setDone(true);
+            job.setUpdatedAt(LocalDateTime.now());
+            jobRepository.save(job);
+            
+            log.info("Job {} đã được đánh dấu hoàn thành bởi user {}", jobId, username);
+            return new ResponseMessage(200, "Đánh dấu công việc hoàn thành thành công");
+            
+        } catch (Exception e) {
+            log.error("Lỗi đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
+            throw e;
+        }
+    }
+    
+    @Override
+    @Transactional
+    public ResponseMessage markJobAsUndone(String jobId, String username) {
+        try {
+            Job job = jobRepository.findById(jobId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+            
+            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+            String userId = user.getId();
+            
+            // Kiểm tra quyền: chỉ chủ job mới có thể hủy đánh dấu hoàn thành
+            if (!userId.equals(job.getUserId())) {
+                throw new RuntimeException("Bạn không phải là người tạo công việc này");
+            }
+            
+            job.setDone(false);
+            job.setUpdatedAt(LocalDateTime.now());
+            jobRepository.save(job);
+            
+            log.info("Job {} đã được hủy đánh dấu hoàn thành bởi user {}", jobId, username);
+            return new ResponseMessage(200, "Hủy đánh dấu công việc hoàn thành thành công");
+            
+        } catch (Exception e) {
+            log.error("Lỗi hủy đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
+            throw e;
+        }
     }
 }

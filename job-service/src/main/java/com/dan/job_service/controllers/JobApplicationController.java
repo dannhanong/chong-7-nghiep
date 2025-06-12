@@ -1,12 +1,9 @@
 package com.dan.job_service.controllers;
 
-import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.requets.UpdateStatusRequest;
 import com.dan.job_service.dtos.responses.JobApplicationResponse;
-import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
-import com.dan.job_service.models.JobApplication;
 import com.dan.job_service.repositories.UserInteractionRepository;
 import com.dan.job_service.security.jwt.JwtService;
 import com.dan.job_service.services.JobApplicationService;
@@ -14,8 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Collections;
-
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -51,7 +46,7 @@ public class JobApplicationController {
     // getJobApplicationByUserId(String userId, String username, Pageable pageable)
     // {
     @GetMapping("/private/list-application")
-    public ResponseEntity<Page<JobApplicationResponse>> getApplications(
+    public ResponseEntity<?> getApplications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             HttpServletRequest request) {
@@ -59,13 +54,13 @@ public class JobApplicationController {
             String username = jwtService.getUsernameFromRequest(request);
             if (username == null || username.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
+                        .body(new ResponseMessage(400, "Không tìm thấy người dùng"));
             }
             Pageable pageable = PageRequest.of(page, size);
             return ResponseEntity.ok(jobApplicationService.getJobApplicationByUserId(username, pageable));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
+                    .body(new ResponseMessage(400, "Không tìm thấy người dùng"));
         }
     }
 
@@ -90,6 +85,20 @@ public class JobApplicationController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(new ResponseMessage(400, "Lỗi khi cập nhật trạng thái đơn ứng tuyển: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/public/count-applied/{userId}")
+    public Long countApplied(@PathVariable String userId) {
+        return jobApplicationService.countAppliedSuccess(userId);
+    }
+
+    @GetMapping("/applications/{applicationId}/detail")
+    public ResponseEntity<?> getJobApplicationDetail(@PathVariable String applicationId) {
+        try {
+            return ResponseEntity.ok(jobApplicationService.getJobApplicationDetail(applicationId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin đơn ứng tuyển: " + e.getMessage()));
         }
     }
 }

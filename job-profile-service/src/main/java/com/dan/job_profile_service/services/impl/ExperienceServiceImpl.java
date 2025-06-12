@@ -80,4 +80,10 @@ public class ExperienceServiceImpl implements ExperienceService {
                     .build();
         }
     }
+
+    @Override
+    public List<Experience> getExperienceByUserId(String userId) {
+        identityServiceClient.getUserById(userId);
+        return experienceRepository.findByUserId(userId);
+    }
 }

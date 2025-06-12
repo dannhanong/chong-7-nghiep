@@ -3,6 +3,8 @@ package com.dan.job_service.services.impls;
 import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.responses.JobApplicationResponse;
+import com.dan.job_service.dtos.responses.JobApplicationDetailResponse;
+import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
 import com.dan.job_service.dtos.responses.UserProfileDetailResponse;
@@ -38,9 +40,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         String userId = identityServiceClient.getUserByUsername(username).getId();
         Job job = jobRepository.findById(jobId).orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
 
-//        if (jobApplicationRepository.findByUserIdAndJobId(userId, jobId).isPresent()) {
-//            throw new RuntimeException("Bạn đã ứng tuyển công việc này");
-//        }
+        if (jobApplicationRepository.findByUserIdAndJobId(userId, jobId).isPresent()) {
+            throw new RuntimeException("Bạn đã ứng tuyển công việc này");
+        }
         if(request.offerSalary() < job.getSalaryMin() || request.offerSalary() > job.getSalaryMax()){
             throw new RuntimeException("Lương đề xuất phải nằm trong khoảng từ " + job.getSalaryMin() + " đến " + job.getSalaryMax());
         }
@@ -92,22 +94,22 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             if (user == null || user.getId() == null) {
                 throw new RuntimeException("Không tìm thấy thông tin người dùng");
             }
-            
+
             Page<JobApplication> jobApplications = jobApplicationRepository.findByUserId(user.getId(), pageable);
-            
+
             List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
                 .map(application -> {
                     Job job = jobRepository.findById(application.getJobId())
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
                     
-                    UserProfileDetailResponse userProfile = profileServiceClient.getUserProfileByUsername(username);
+                    UserProfileDetailResponse userProfile = profileServiceClient.getProfileByUserId(application.getUserId());
                     long countApplied = countAppliedSuccess(user.getId());
-                        
+
                     return JobApplicationResponse.builder()
                         .id(application.getId())
                         .userId(application.getUserId())
                         .jobId(application.getJobId())
-                        .userName(userProfile.getName())
+                        .name(userProfile.getName())
                         .title(job.getTitle())
                         .status(application.getStatus())
                         .offerSalary(application.getOfferSalary())
@@ -116,13 +118,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                         .appliedAt(application.getAppliedAt())
                         .updatedAt(application.getUpdatedAt())
                         .enabled(userProfile.isEnabled())
-                        .email(userProfile.getEmail())
-                        .roles(userProfile.getRoles())
-                        .linkPage(userProfile.getLinkPage())
+                        .email(user.getEmail())
+                        .linkPage(user.getLinkPage())
                         .dob(userProfile.getDob())
                         .phoneNumber(userProfile.getPhoneNumber())
                         .avatarId(userProfile.getAvatarId())
-                        .pathName(userProfile.getPathName())
                         .countApplied(countApplied)
                         .build();
                 })
@@ -145,18 +145,18 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
 
         Page<JobApplication> jobApplications = jobApplicationRepository.findByJobId(jobId, pageable);
-        
+
         List<JobApplicationResponse> responseList = jobApplications.getContent().stream()
             .map(application -> {
                 UserDetailToCreateJob user = identityServiceClient.getUserById(application.getUserId());
-                UserProfileDetailResponse userProfile = profileServiceClient.getUserProfileByUsername(user.getUsername());
+                UserProfileDetailResponse userProfile = profileServiceClient.getProfileByUserId(application.getUserId());
                 long countApplied = countAppliedSuccess(application.getUserId());
-                
+
                 return JobApplicationResponse.builder()
                     .id(application.getId())
                     .userId(application.getUserId())
                     .jobId(application.getJobId())
-                    .userName(userProfile.getName())
+                    .name(userProfile.getName())
                     .title(job.getTitle())
                     .status(application.getStatus())
                     .offerSalary(application.getOfferSalary())
@@ -165,13 +165,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                     .appliedAt(application.getAppliedAt())
                     .updatedAt(application.getUpdatedAt())
                     .enabled(userProfile.isEnabled())
-                    .email(userProfile.getEmail())
-                    .roles(userProfile.getRoles())
-                    .linkPage(userProfile.getLinkPage())
+                    .email(user.getEmail())
+                    .linkPage(user.getLinkPage())
                     .dob(userProfile.getDob())
                     .phoneNumber(userProfile.getPhoneNumber())
                     .avatarId(userProfile.getAvatarId())
-                    .pathName(userProfile.getPathName())
                     .countApplied(countApplied)
                     .build();
             })
@@ -183,5 +181,29 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     public long countAppliedSuccess(String userId) {
         return jobApplicationRepository.countApprovedApplicationsByUserId(userId);
+    }
+    @Override
+    public Object getJobApplicationDetail(String applicationId) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn ứng tuyển"));
+
+        Job job = jobRepository.findById(application.getJobId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+
+        // Get client info
+        UserDetailToCreateJob clientUser = identityServiceClient.getUserById(job.getUserId());
+        UserDetailToCreateJob freelancerUser = identityServiceClient.getUserById(application.getUserId());
+
+        return JobApplicationDetailResponse.builder()
+                .id(application.getId())
+                .jobId(application.getJobId())
+                .jobTitle(job.getTitle())
+                .clientUsername(clientUser.getUsername())
+                .freelancerUsername(freelancerUser.getUsername())
+                .status(application.getStatus().toString())
+                .completedAt(application.getUpdatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+                .jobDone(job.getDone() != null ? job.getDone() : false) // Thêm job done status
+                .jobStatus(job.getStatus() != null ? job.getStatus().toString() : "UNKNOWN") // Thêm job status
+                .build();
     }
 }

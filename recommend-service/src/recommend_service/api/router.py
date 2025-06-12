@@ -66,7 +66,7 @@ async def get_job_recommendations(
         logger.error(f"Error in get_profile_recommendations: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-@router.get("/similar-jobs/{job_id}")
+@router.get("/similar/{job_id}")
 async def get_similar_jobs(
     request: Request,
     job_id: str,

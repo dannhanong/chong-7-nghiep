@@ -58,8 +58,6 @@ public class JobController {
         }
     }
 
-
-
     @GetMapping("/public/get-jobs-posted-last-24-hours")
     public ResponseEntity<?> getJobsPostedLast24Hours() {
         try {
@@ -115,7 +113,7 @@ public class JobController {
         }
     }
 
-    @GetMapping("/private/get-all-jobs")
+    @GetMapping("/admin/get-all-jobs")
     public ResponseEntity<?> getAllJobsByAdmin(
             @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) String title,
@@ -158,6 +156,74 @@ public class JobController {
                     categoryId, title, page, size, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(new ResponseMessage(400, "Lỗi khi lấy danh sách công việc: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/private/get-jobs-by-user")
+    public ResponseEntity<?> getAllJobsByUser(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<JobDetail> jobsPage = jobService.getJobsByUserId(username, pageable);
+            return ResponseEntity.ok(jobsPage);
+        } catch (Exception e) {
+            log.error("Lỗi lấy danh sách công việc (admin): {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi lấy danh sách công việc: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/private/get-applied-jobs")
+    public ResponseEntity<?> getAppliedJobs(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<JobDetail> appliedJobsPage = jobService.getAppliedJobs(username, pageable);
+            
+            if (appliedJobsPage.isEmpty()) {
+                return ResponseEntity.ok(new ResponseMessage(200, "Bạn chưa ứng tuyển công việc nào"));
+            }
+            
+            return ResponseEntity.ok(appliedJobsPage);
+        } catch (Exception e) {
+            log.error("Lỗi lấy danh sách công việc đã ứng tuyển: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi lấy danh sách công việc đã ứng tuyển: " + e.getMessage()));
+        }
+    }
+    
+
+    @PutMapping("/private/{jobId}/mark-done")
+    public ResponseEntity<?> markJobAsDone(@PathVariable String jobId, HttpServletRequest request) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            jobService.markJobAsDone(jobId, username);
+            log.info("Job {} đã được đánh dấu hoàn thành bởi người dùng: {}", jobId, username);
+            return ResponseEntity.ok(new ResponseMessage(200, "Đánh dấu công việc hoàn thành thành công"));
+        } catch (Exception e) {
+            log.error("Lỗi đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi đánh dấu công việc hoàn thành: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/private/{jobId}/mark-undone")
+    public ResponseEntity<?> markJobAsUndone(@PathVariable String jobId, HttpServletRequest request) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            jobService.markJobAsUndone(jobId, username);
+            log.info("Job {} đã được hủy đánh dấu hoàn thành bởi người dùng: {}", jobId, username);
+            return ResponseEntity.ok(new ResponseMessage(200, "Hủy đánh dấu công việc hoàn thành thành công"));
+        } catch (Exception e) {
+            log.error("Lỗi hủy đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi hủy đánh dấu công việc hoàn thành: " + e.getMessage()));
         }
     }
 }

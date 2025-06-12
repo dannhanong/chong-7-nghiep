@@ -13,4 +13,5 @@ import com.dan.job_service.models.Category;
 public interface CategoryRepository extends MongoRepository<Category, String> {
     List<Category> findByParentId(String parentId);
     Page<Category> findAllByNameContainingIgnoreCaseAndDeletedAtIsNull(String name, Pageable pageable);
+
 }

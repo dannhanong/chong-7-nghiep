@@ -19,5 +19,6 @@ public class UserDetailToCreateJob {
     String name;
     String username;
     String email;
+    String linkPage;
     // boolean identityVerified;
 }

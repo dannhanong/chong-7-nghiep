@@ -3,6 +3,7 @@ package com.dan.job_profile_service.controllers;
 import com.dan.job_profile_service.dtos.requests.ExperienceRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.models.Experience;
+import com.dan.job_profile_service.models.Skill;
 import com.dan.job_profile_service.security.jwt.JwtService;
 import com.dan.job_profile_service.services.ExperienceService;
 
@@ -69,5 +70,17 @@ public class ExperienceController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseMessage> deleteExperience(@PathVariable String id) {
         return ResponseEntity.ok(experienceService.delete(id));
+    }
+
+    @GetMapping("public/get/{userId}")
+    public ResponseEntity<?> getExperienceByUserId(@PathVariable String userId) {
+        try {
+            List<Experience> experiences = experienceService.getExperienceByUserId(userId);
+            return ResponseEntity.ok(experiences);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new ResponseMessage(400, "Không tìm thấy kinh nghiệm: " + e.getMessage()));
+        }
     }
 }
