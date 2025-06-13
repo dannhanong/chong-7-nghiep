@@ -1,15 +1,16 @@
 package com.dan.job_profile_service.services.impl;
 
+import com.dan.events.dtos.JobProfileEvent;
 import com.dan.job_profile_service.dtos.requests.SkillRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.http_clients.FileServiceClient;
-import com.dan.job_profile_service.models.Profile;
+import com.dan.job_profile_service.http_clients.IdentityServiceClient;
 import com.dan.job_profile_service.models.Skill;
-import com.dan.job_profile_service.repositories.ProfileRepository;
 import com.dan.job_profile_service.repositories.SkillRepository;
 import com.dan.job_profile_service.services.SkillService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,12 +22,14 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SkillServiceImpl implements SkillService {
     private final SkillRepository skillRepository;
-    private final ProfileRepository profileRepository;
     private final FileServiceClient fileServiceClient;
+    private final IdentityServiceClient identityServiceClient;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
-    public List<Skill> getAllSkills() {
-        return skillRepository.findAll();
+    public List<Skill> getAllSkills(String username) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
+        return skillRepository.findByUserId(userId);
     }
 
     @Override
@@ -39,12 +42,11 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public Skill create(SkillRequest skillRequest) {
-        profileRepository.findById(skillRequest.getProfileId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ với id: "+skillRequest.getProfileId()));
+    public Skill create(SkillRequest skillRequest, String username) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
 
         Skill newSkill = Skill.builder()
-                .profileId(skillRequest.getProfileId())
+                .userId(userId)
                 .skillName(skillRequest.getSkillName())
                 .proficiency(skillRequest.getProficiency())
                 .yearsExperience(skillRequest.getYearsExperience())
@@ -58,14 +60,20 @@ public class SkillServiceImpl implements SkillService {
             String fileCode = res.get("fileCode");
             newSkill.setFile(fileCode);
         }
-        return skillRepository.save(newSkill);
+        Skill savedSkill = skillRepository.save(newSkill);
+
+        JobProfileEvent jobProfileEvent = JobProfileEvent.builder()
+                .userId(userId)
+                .build();
+
+        kafkaTemplate.send("profile_created", jobProfileEvent);
+        return savedSkill;
     }
 
 
     @Override
     public Skill update(SkillRequest skillRequest, String id) {
             Skill existingSkill = getSkillById(id);
-            existingSkill.setProfileId(skillRequest.getProfileId());
             existingSkill.setSkillName(skillRequest.getSkillName());
             existingSkill.setProficiency(skillRequest.getProficiency());
             existingSkill.setYearsExperience(skillRequest.getYearsExperience());
@@ -78,7 +86,13 @@ public class SkillServiceImpl implements SkillService {
                 String fileCode = res.get("fileCode");
                 existingSkill.setFile(fileCode);
             }
-            return skillRepository.save(existingSkill);
+            Skill updatedSkill = skillRepository.save(existingSkill);
+
+            JobProfileEvent jobProfileEvent = JobProfileEvent.builder()
+                    .userId(existingSkill.getUserId())
+                    .build();
+            kafkaTemplate.send("profile_updated", jobProfileEvent);
+            return updatedSkill;
     }
 
     @Override
@@ -95,5 +109,11 @@ public class SkillServiceImpl implements SkillService {
                     .message("Xóa học vấn thất bại " + e.getMessage())
                     .build();
         }
+    }
+
+    @Override
+    public List<Skill> getSkillByUserId(String userId) {
+        identityServiceClient.getUserById(userId);
+        return skillRepository.findByUserId(userId);
     }
 }

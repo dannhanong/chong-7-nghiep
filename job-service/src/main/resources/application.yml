@@ -1,14 +1,12 @@
 server:
-  port: 8082
+  port: 9086
 
 spring:
   data:
     mongodb:
-      uri: mongodb+srv://admin:newpass@dannhanong.0qmy0.mongodb.net/jobs_job?retryWrites=true&w=majority&appName=dannhanong&ssl=true&tlsAllowInvalidCertificates=true&tlsAllowInvalidHostnames=true
-
+      uri: mongodb://${MONGO_USER:root}:${MONGO_PASS:123456}@${MONGO_HOST:103.216.117.244}:${MONGO_PORT:27017}/jobs_job?authSource=admin
   kafka:
-    # bootstrap-servers: ${KAFKA_HOST:https://special-giggle-4jjqppww6rj435rwg-9094.app.github.dev}:${KAFKA_PORT:9094}
-    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9094}
+    bootstrap-servers: ${KAFKA_HOST:103.216.117.244}:${KAFKA_PORT:9095}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -26,12 +24,6 @@ spring:
           json:
             trusted:
               packages: "*"
-            value:
-              default:
-                type: com.dan.events.dtos.EventAddSignature
-            use:
-              type:
-                headers: false
 
 eureka:
   client:
@@ -68,3 +60,7 @@ resilience4j:
         waitDurationInOpenState: 10000ms
         permittedNumberOfCallsInHalfOpenState: 3
         registerHealthIndicator: true
+
+identity:
+  service:
+    url: http://localhost:8080

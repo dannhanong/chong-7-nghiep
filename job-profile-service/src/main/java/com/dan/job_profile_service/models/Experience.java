@@ -1,14 +1,13 @@
 package com.dan.job_profile_service.models;
 
 import com.dan.job_profile_service.dtos.enums.EmploymentType;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Document(collection = "experiences")
 @Getter
@@ -20,8 +19,7 @@ public class Experience extends BaseEntity{
     @Id
     private String id;
     @Indexed
-    @Field("profile_id")
-    private String profileId;
+    private String userId;
     //ten cong ty
     @Field("company_name")
     private String companyName;
@@ -32,10 +30,10 @@ public class Experience extends BaseEntity{
     private String location;
     //bat dau
     @Field("start_date")
-    private LocalDateTime startDate;
+    private LocalDate startDate;
     //ket thuc
     @Field("end_date")
-    private LocalDateTime endDate;
+    private LocalDate endDate;
     private String description;
     //thanh tuu
     private String achievements;

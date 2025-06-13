@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ExperienceRepository extends MongoRepository<Experience, String> {
-    List<Experience> findByProfileId(String profileId);
+    List<Experience> findByUserId(String userId);
 }

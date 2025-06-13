@@ -2,6 +2,8 @@ package com.dan.events;
 
 import java.time.LocalDateTime;
 
+
+import com.dan.job_service.repositories.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -17,6 +19,8 @@ public class EventController {
     private SearchClickRepository searchClickRepository;
     @Autowired
     private JobViewRepository jobViewRepository;
+    @Autowired
+    private JobRepository jobRepository;
 
     @KafkaListener(topics = "job_get_job_by_id")
     public void listenGetJobById(EventAddJobDataForRecommend message) {

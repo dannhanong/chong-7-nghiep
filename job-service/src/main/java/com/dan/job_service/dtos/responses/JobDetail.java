@@ -2,6 +2,9 @@ package com.dan.job_service.dtos.responses;
 
 import java.time.LocalDate;
 
+import com.dan.job_service.dtos.enums.WorkingForm;
+import com.dan.job_service.dtos.enums.WorkingType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +21,13 @@ import lombok.experimental.FieldDefaults;
 public class JobDetail {
     String id;
     String userName;
+    String name;
+    
+    String categoryName; // Added field
+    String categoryId; // Added field
+    String userId;
     String title;
+    String shortDescription; // Changed from description to shortDescription
     String description;
     long salaryMin;
     long salaryMax;
@@ -30,4 +39,8 @@ public class JobDetail {
     String createdAt;
     String updatedAt;
     String contentUri;
+    WorkingType workingType;
+    WorkingForm workingForm;
+    String file;
+    Integer sumJob;
 }

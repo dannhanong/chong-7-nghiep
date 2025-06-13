@@ -3,7 +3,10 @@ package com.dan.job_profile_service.controllers;
 import com.dan.job_profile_service.dtos.requests.EducationRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.models.Education;
+import com.dan.job_profile_service.security.jwt.JwtService;
 import com.dan.job_profile_service.services.EducationService;
+
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,31 +15,33 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/educations")
+@RequestMapping("/jp/educations")
 @RequiredArgsConstructor
 public class EducationController {
-
+    private final JwtService jwtService;
     private final EducationService educationService;
 
-    @PostMapping("/admin/create")
+    @PostMapping("/create")
     public ResponseEntity<ResponseMessage> createEducation(
+            HttpServletRequest request,
             @Valid @RequestBody EducationRequest educationRequest
     ) {
         try {
-            educationService.create(educationRequest);
+            String username = jwtService.getUsernameFromRequest(request);
+            educationService.create(educationRequest, username);
             return ResponseEntity.ok(new ResponseMessage(200, "Thêm học vấn thành công"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ResponseMessage(500, "Lỗi khi thêm học vấn: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/admin")
+    @GetMapping("")
     public ResponseEntity<List<Education>> getAllEducations() {
         List<Education> educations = educationService.getAllEducations();
         return ResponseEntity.ok(educations);
     }
 
-    @GetMapping("/admin/get/{id}")
+    @GetMapping("/get/{id}")
     public ResponseEntity<?> getEducationById(@PathVariable String id) {
         try {
             Education edu = educationService.getEducationById(id);
@@ -48,7 +53,7 @@ public class EducationController {
         }
     }
 
-    @PutMapping("/admin/update/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<ResponseMessage> updateEducation(
             @Valid @RequestBody EducationRequest educationRequest,
             @PathVariable String id
@@ -61,7 +66,7 @@ public class EducationController {
         }
     }
 
-    @DeleteMapping("/admin/delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseMessage> deleteEducation(@PathVariable String id) {
         ResponseMessage resp = educationService.delete(id);
         return ResponseEntity.status(resp.getStatus()).body(resp);

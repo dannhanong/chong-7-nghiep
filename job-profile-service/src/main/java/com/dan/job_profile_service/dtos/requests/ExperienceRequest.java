@@ -4,7 +4,7 @@ import com.dan.job_profile_service.dtos.enums.EmploymentType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -18,8 +18,8 @@ public class ExperienceRequest {
     String position;
     EmploymentType employmentType; //FULL_TIME, PART_TIME, INTERN, COLLABORATOR
     String location;
-    LocalDateTime startDate;
-    LocalDateTime endDate;
+    LocalDate startDate;
+    LocalDate endDate;
     String description;
     String achievements;
 }

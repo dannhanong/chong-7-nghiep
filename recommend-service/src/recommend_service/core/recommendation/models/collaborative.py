@@ -9,6 +9,8 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
 from recommend_service.core.recommendation.models.content_based import ContentBasedRecommender
+from recommend_service.utils.user_utils import get_user_id_from_username
+from recommend_service.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +150,7 @@ class CollaborativeRecommender:
     def _get_applications(self) -> List[Dict]:
         """Lấy dữ liệu về việc người dùng ứng tuyển vào công việc"""
         try:
-            applications_collection = self.db.get_collection("user_interaction", "applications")
+            applications_collection = self.db.get_collection("jobs_job", "applications")
             applications = list(applications_collection.find(
                 {"status": {"$ne": "rejected"}},  # Không lấy các ứng tuyển bị từ chối
                 {"userId": 1, "jobId": 1}
@@ -165,7 +167,7 @@ class CollaborativeRecommender:
     def _get_bookmarks(self) -> List[Dict]:
         """Lấy dữ liệu về việc người dùng bookmark/save job"""
         try:
-            bookmarks_collection = self.db.get_collection("user_interaction", "bookmarks")
+            bookmarks_collection = self.db.get_collection("jobs_job", "bookmarks")
             bookmarks = list(bookmarks_collection.find(
                 {"active": True},
                 {"userId": 1, "jobId": 1}
@@ -182,7 +184,7 @@ class CollaborativeRecommender:
     def _get_views(self) -> List[Dict]:
         """Lấy dữ liệu về việc người dùng xem chi tiết job"""
         try:
-            views_collection = self.db.get_collection("user_interaction", "job_views")
+            views_collection = self.db.get_collection("jobs_job", "job_views")
             views = list(views_collection.find(
                 {"viewDuration": {"$gt": 10}},  # Chỉ lấy các view có thời gian > 10 giây
                 {"userId": 1, "jobId": 1}
@@ -199,7 +201,7 @@ class CollaborativeRecommender:
     def _get_ratings(self) -> List[Dict]:
         """Lấy dữ liệu về việc người dùng đánh giá job"""
         try:
-            ratings_collection = self.db.get_collection("user_interaction", "job_ratings")
+            ratings_collection = self.db.get_collection("jobs_job", "job_ratings")
             ratings = list(ratings_collection.find(
                 {"rating": {"$gte": 3}},  # Chỉ lấy đánh giá từ 3 sao trở lên
                 {"userId": 1, "jobId": 1}
@@ -216,7 +218,7 @@ class CollaborativeRecommender:
     def _get_clicks(self) -> List[Dict]:
         """Lấy dữ liệu về việc người dùng click vào job trong kết quả tìm kiếm"""
         try:
-            clicks_collection = self.db.get_collection("user_interaction", "search_clicks")
+            clicks_collection = self.db.get_collection("jobs_job", "search_clicks")
             clicks = list(clicks_collection.find(
                 {"timestamp": {"$gte": datetime.now() - timedelta(days=30)}},  # Chỉ lấy clicks trong 30 ngày gần nhất
                 {"userId": 1, "jobId": 1}
@@ -230,7 +232,7 @@ class CollaborativeRecommender:
             logger.error(f"Error getting search clicks: {e}")
             return []
             
-    def recommend(self, user_id: str, limit: int = 10) -> Dict[str, float]:
+    def recommend(self, username: str, limit: int = 50) -> Dict[str, float]:
         """
         Đề xuất jobs cho người dùng dựa vào tương tác của người dùng khác tương tự
         
@@ -242,6 +244,12 @@ class CollaborativeRecommender:
             Dictionary {job_id: score} đã sắp xếp theo thứ tự giảm dần
         """
         try:
+            user_id = None
+            if username:
+                user_id = get_user_id_from_username(username)
+                if not user_id:
+                    logger.warning(f"User {username} not found in database.")
+
             # Đảm bảo model đã được xây dựng
             if not hasattr(self, 'user_item_matrix'):
                 success = self.fit()
@@ -322,17 +330,17 @@ class CollaborativeRecommender:
     def _has_user_profile(self, user_id: str) -> bool:
         """Kiểm tra xem user có profile hay không"""
         try:
-            users_collection = self.db.get_collection("user_profile", "users")
+            users_collection = self.db.get_collection(settings.MONGODB_USER_DATABASE, settings.MONGODB_USERS_COLLECTION)
             user = users_collection.find_one({"_id": user_id})
             
             if not user:
                 return False
                 
             # Kiểm tra xem có đủ thông tin profile không
-            skills_collection = self.db.get_collection("user_profile", "skills")
+            skills_collection = self.db.get_collection(settings.MONGODB_JOB_PROFILE_DATABASE, settings.MONGODB_JOB_PROFILE_SKILL_COLLECTION)
             skills_count = skills_collection.count_documents({"userId": user_id})
-            
-            experiences_collection = self.db.get_collection("user_profile", "experiences")  
+
+            experiences_collection = self.db.get_collection(settings.MONGODB_JOB_PROFILE_DATABASE, settings.MONGODB_JOB_PROFILE_EXPERIENCE_COLLECTION)
             experiences_count = experiences_collection.count_documents({"userId": user_id})
             
             # Có ít nhất skill hoặc experience
@@ -413,7 +421,7 @@ class CollaborativeRecommender:
             Dictionary {job_id: recency_score}
         """
         try:
-            jobs_collection = self.db.get_collection("jobs_job", "jobs")
+            jobs_collection = self.db.get_collection(settings.MONGODB_JOB_DATABASE, settings.MONGODB_JOBS_COLLECTION)
 
             recent_jobs = list(jobs_collection.find(
                 {"active": True, "status": True, "deletedAt": None},

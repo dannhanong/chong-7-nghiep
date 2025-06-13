@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.dan.job_service.dtos.enums.WorkingForm;
 import com.dan.job_service.dtos.enums.WorkingType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -38,7 +39,7 @@ public class Job {
 
     @NotBlank(message = "Danh mục không được để trống")
     String categoryId;
-
+    String shortDescription;
     @NotBlank(message = "Tiêu đề không được để trống")
     String title;
     String description;
@@ -58,8 +59,12 @@ public class Job {
     Boolean status;
     Boolean active;
 
+    @Builder.Default
+    Boolean done = false;
+
     WorkingType workingType;
     WorkingForm workingForm;
+    String file;
 
     @CreatedDate
     LocalDateTime createdAt;
@@ -68,5 +73,6 @@ public class Job {
     LocalDateTime updatedAt;
 
     LocalDateTime deletedAt;
+
     String contentUri;
 }

@@ -2,6 +2,7 @@ package com.dan.job_service.models;
 
 import java.time.LocalDateTime;
 
+import jakarta.validation.constraints.Min;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -33,11 +34,15 @@ public class JobApplication {
     
     @Indexed
     ApplicationStatus status;
+
+    // muc gia de xuat
+    @Min(value = 0, message = "Lương tối thiểu phải lớn hơn hoặc bằng 0")
+    long offerSalary;
+    // mo ta ke hoach thuc hien
+    String offerPlan;
+    // mo ta kinh nghiem phu hpo voi du an
+    String offerSkill;
     
     LocalDateTime appliedAt;
     LocalDateTime updatedAt;
-    
-    // Các trường bổ sung nếu cần
-    String coverLetter;
-    String cvUrl;
 }

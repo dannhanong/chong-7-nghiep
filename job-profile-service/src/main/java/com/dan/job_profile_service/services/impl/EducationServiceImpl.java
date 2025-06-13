@@ -1,14 +1,15 @@
 package com.dan.job_profile_service.services.impl;
 
+import com.dan.events.dtos.JobProfileEvent;
 import com.dan.job_profile_service.dtos.requests.EducationRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
+import com.dan.job_profile_service.http_clients.IdentityServiceClient;
 import com.dan.job_profile_service.models.Education;
-import com.dan.job_profile_service.models.Profile;
 import com.dan.job_profile_service.repositories.EducationRepository;
-import com.dan.job_profile_service.repositories.ProfileRepository;
 import com.dan.job_profile_service.services.EducationService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,7 +18,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EducationServiceImpl implements EducationService {
     private final EducationRepository educationRepository;
-    private final ProfileRepository profileRepository;
+    private final IdentityServiceClient identityServiceClient;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
     public List<Education> getAllEducations() {
@@ -31,12 +33,11 @@ public class EducationServiceImpl implements EducationService {
     }
 
     @Override
-    public Education create(EducationRequest educationRequest) {
-        profileRepository.findById(educationRequest.getProfileId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ với id: "+educationRequest.getProfileId()));
+    public Education create(EducationRequest educationRequest, String username) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
 
         Education education = Education.builder()
-                    .profileId(educationRequest.getProfileId())
+                    .userId(userId)
                     .schoolName(educationRequest.getSchoolName())
                     .degree(educationRequest.getDegree())
                     .major(educationRequest.getMajor())
@@ -46,14 +47,19 @@ public class EducationServiceImpl implements EducationService {
                     .location(educationRequest.getLocation())
                     .build();
 
-            return educationRepository.save(education);
+            Education savedEducation = educationRepository.save(education);
+
+            JobProfileEvent jobProfileEvent = JobProfileEvent.builder()
+                    .userId(userId)
+                    .build();
+        kafkaTemplate.send("profile_created", jobProfileEvent);
+        return savedEducation;
     }
 
     @Override
     public Education update(EducationRequest educationRequest, String id) {
             Education existingEducation = getEducationById(id);
 
-            existingEducation.setProfileId(educationRequest.getProfileId());
             existingEducation.setSchoolName(educationRequest.getSchoolName());
             existingEducation.setDegree(educationRequest.getDegree());
             existingEducation.setMajor(educationRequest.getMajor());
@@ -62,7 +68,12 @@ public class EducationServiceImpl implements EducationService {
             existingEducation.setGrade(educationRequest.getGrade());
             existingEducation.setLocation(educationRequest.getLocation());
 
-            return educationRepository.save(existingEducation);
+            Education updatedEducation = educationRepository.save(existingEducation);
+            JobProfileEvent jobProfileEvent = JobProfileEvent.builder()
+                    .userId(updatedEducation.getUserId())
+                    .build();
+            kafkaTemplate.send("profile_updated", jobProfileEvent);
+            return updatedEducation;
     }
 
     @Override

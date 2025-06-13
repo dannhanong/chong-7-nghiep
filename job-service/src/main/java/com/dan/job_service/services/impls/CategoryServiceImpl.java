@@ -10,6 +10,8 @@ import com.dan.job_service.services.CategoryService;
 
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -38,10 +40,7 @@ public class CategoryServiceImpl implements CategoryService {
                     .message("Thêm danh mục thành công")
                     .build();
         } catch (Exception e) {
-            return ResponseMessage.builder()
-                    .status(500)
-                    .message("Thêm danh mục thất bại")
-                    .build();
+            throw new RuntimeException("Thêm danh mục thất bại: " + e.getMessage());
         }
     }
 
@@ -97,17 +96,49 @@ public class CategoryServiceImpl implements CategoryService {
             .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại"));
     }
 
+    @Override
+    public List<CategoryResponse> getCategoriesByParentId(String parentId) {
+        categoryRepository.findById(parentId)
+            .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
+        
+        return categoryRepository.findByParentId(parentId)
+            .stream()
+            .map(this::fromCategoryToCategoryResponse)
+            .toList();
+    }
+
+
     private CategoryResponse fromCategoryToCategoryResponse(Category category) {
         String parentId = category.getParentId();
-        Category pCategory = categoryRepository.findById(parentId)
-                .orElse(null);
+        Category pCategory = null;
+        if (parentId != null) {
+            pCategory = categoryRepository.findById(parentId)
+                    .orElse(null);
+        }
+
+        // Get child categories
+        List<CategoryResponse> childCategories = categoryRepository.findByParentId(category.getId())
+                .stream()
+                .map(childCategory -> CategoryResponse.builder()
+                        .id(childCategory.getId())
+                        .name(childCategory.getName())
+                        .description(childCategory.getDescription())
+                        .totalJob(jobRepository.countByCategoryId(childCategory.getId()))
+                        .build())
+                .toList();
 
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
-                .parent(fromCategoryToCategoryResponse(pCategory))
+                .parent(pCategory != null ? CategoryResponse.builder()
+                        .id(pCategory.getId())
+                        .name(pCategory.getName())
+                        .description(pCategory.getDescription())
+                        .totalJob(jobRepository.countByCategoryId(pCategory.getId()))
+                        .build() : null)
                 .totalJob(jobRepository.countByCategoryId(category.getId()))
+                .childrens(childCategories)
                 .build();
     }
 
@@ -117,5 +148,38 @@ public class CategoryServiceImpl implements CategoryService {
             childCategory.setDeletedAt(LocalDateTime.now());
             categoryRepository.save(childCategory);
         });
+    }
+
+    @Override
+    public Page<CategoryResponse> getAllCategories(String keyword, Pageable pageable) {
+        return categoryRepository.findAll(pageable)
+            .map(category -> {
+                List<CategoryResponse> childCategories = categoryRepository.findByParentId(category.getId())
+                    .stream()
+                    .map(childCategory -> CategoryResponse.builder()
+                        .id(childCategory.getId())
+                        .name(childCategory.getName())
+                        .description(childCategory.getDescription())
+                        .totalJob(jobRepository.countByCategoryId(childCategory.getId()))
+                        .build())
+                    .toList();
+
+                return CategoryResponse.builder()
+                    .id(category.getId())
+                    .name(category.getName())
+                    .description(category.getDescription())
+                    .parent(category.getParentId() != null ? 
+                        categoryRepository.findById(category.getParentId())
+                            .map(parentCategory -> CategoryResponse.builder()
+                                .id(parentCategory.getId())
+                                .name(parentCategory.getName())
+                                .description(parentCategory.getDescription())
+                                .totalJob(jobRepository.countByCategoryId(parentCategory.getId()))
+                                .build())
+                            .orElse(null) : null)
+                    .totalJob(jobRepository.countByCategoryId(category.getId()))
+                    .childrens(childCategories)
+                    .build();
+            });
     }
 }

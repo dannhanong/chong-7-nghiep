@@ -1,10 +1,14 @@
 package com.dan.job_service.controllers;
 
 import com.dan.job_service.dtos.requets.CategoryRequest;
+import com.dan.job_service.dtos.responses.CategoryResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.services.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,5 +40,23 @@ public class CategoryController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin danh mục: " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/public/get-by-parentId/{id}")
+    public ResponseEntity<?> getCategoriesByParentId(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(categoryService.getCategoriesByParentId(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin danh mục: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/public/get-all")
+    public ResponseEntity<Page<CategoryResponse>> getAllCategories(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(categoryService.getAllCategories(keyword, pageable));
     }
 }

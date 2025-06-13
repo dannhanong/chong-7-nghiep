@@ -4,6 +4,7 @@ import com.dan.job_profile_service.security.jwt.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -27,7 +28,16 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http.authorizeHttpRequests(
                 config->config
-                        .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.GET, Endpoints.ADMIN_GET_ENDPOINTS).hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.POST, Endpoints.ADMIN_POST_ENDPOINTS).hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, Endpoints.ADMIN_PUT_ENDPOINTS).hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, Endpoints.ADMIN_DELETE_ENDPOINTS).hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, Endpoints.RECRUITER_GET_ENDPOINTS).hasAnyAuthority("SELLER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, Endpoints.RECRUITER_POST_ENDPOINTS).hasAuthority("SELLER")
+                        .requestMatchers(HttpMethod.PUT, Endpoints.RECRUITER_PUT_ENDPOINTS).hasAuthority("SELLER")
+                        .requestMatchers(HttpMethod.DELETE, Endpoints.RECRUITER_DELETE_ENDPOINTS).hasAuthority("SELLER")
+                        .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_ENDPOINTS).permitAll()
+                        .anyRequest().authenticated()
         );
         http.cors(cors -> {
             cors.configurationSource(request -> {

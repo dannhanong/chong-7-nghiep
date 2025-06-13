@@ -2,25 +2,20 @@ package com.dan.job_service.security;
 
 public class Endpoints {
         private static final String BASE_JOB_URL = "/job/jobs";
-        private static final String BASE_COMPANY_URL = "/job/companies";
+        private static final String BASE_CATEGORY_URL = "/job/categories";
 
         public static final String[] PUBLIC_GET_ENDPOINTS = {
                 BASE_JOB_URL + "/public/**",
-                BASE_COMPANY_URL + "/public/**"
-        };
-
-        public static final String[] PRIVATE_POST_ENDPOINTS = {
-                BASE_JOB_URL + "/private/create",
-                BASE_JOB_URL + "/private/update/**",
-                BASE_JOB_URL + "/private/delete/**",
+                BASE_CATEGORY_URL + "/public/**",
         };
 
         public static final String[] ADMIN_GET_ENDPOINTS = {
+                BASE_JOB_URL + "/admin/**",
+                BASE_CATEGORY_URL + "/admin/**",
         };
 
         public static final String[] ADMIN_POST_ENDPOINTS = {
                 BASE_JOB_URL + "/categories/admin/**",
-                BASE_COMPANY_URL + "/admin/**",
         };
 
         public static final String[] ADMIN_PUT_ENDPOINTS = {

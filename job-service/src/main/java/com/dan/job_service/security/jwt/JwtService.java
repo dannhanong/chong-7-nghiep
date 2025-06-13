@@ -66,4 +66,14 @@ public class JwtService {
             return null;
         }
     }
+
+    public List<String> getRolesFromRequest(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            return getRolesFromToken(token);
+        } else {
+            return null;
+        }
+    }
 }
