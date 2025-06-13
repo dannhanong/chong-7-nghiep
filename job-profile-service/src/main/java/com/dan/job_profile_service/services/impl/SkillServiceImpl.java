@@ -1,6 +1,5 @@
 package com.dan.job_profile_service.services.impl;
 
-import com.dan.events.dtos.JobProfileEvent;
 import com.dan.job_profile_service.dtos.requests.SkillRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.http_clients.FileServiceClient;
@@ -10,7 +9,7 @@ import com.dan.job_profile_service.repositories.SkillRepository;
 import com.dan.job_profile_service.services.SkillService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,7 +23,6 @@ public class SkillServiceImpl implements SkillService {
     private final SkillRepository skillRepository;
     private final FileServiceClient fileServiceClient;
     private final IdentityServiceClient identityServiceClient;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
     public List<Skill> getAllSkills(String username) {
@@ -60,14 +58,7 @@ public class SkillServiceImpl implements SkillService {
             String fileCode = res.get("fileCode");
             newSkill.setFile(fileCode);
         }
-        Skill savedSkill = skillRepository.save(newSkill);
-
-        JobProfileEvent jobProfileEvent = JobProfileEvent.builder()
-                .userId(userId)
-                .build();
-
-        kafkaTemplate.send("profile_created", jobProfileEvent);
-        return savedSkill;
+        return skillRepository.save(newSkill);
     }
 
 
@@ -86,13 +77,7 @@ public class SkillServiceImpl implements SkillService {
                 String fileCode = res.get("fileCode");
                 existingSkill.setFile(fileCode);
             }
-            Skill updatedSkill = skillRepository.save(existingSkill);
-
-            JobProfileEvent jobProfileEvent = JobProfileEvent.builder()
-                    .userId(existingSkill.getUserId())
-                    .build();
-            kafkaTemplate.send("profile_updated", jobProfileEvent);
-            return updatedSkill;
+            return skillRepository.save(existingSkill);
     }
 
     @Override

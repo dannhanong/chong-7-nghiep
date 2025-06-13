@@ -46,7 +46,7 @@ public class JobApplicationController {
     // getJobApplicationByUserId(String userId, String username, Pageable pageable)
     // {
     @GetMapping("/private/list-application")
-    public ResponseEntity<?> getApplications(
+    public ResponseEntity<Page<JobApplicationResponse>> getApplications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             HttpServletRequest request) {
@@ -54,13 +54,13 @@ public class JobApplicationController {
             String username = jwtService.getUsernameFromRequest(request);
             if (username == null || username.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ResponseMessage(400, "Không tìm thấy người dùng"));
+                        .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
             }
             Pageable pageable = PageRequest.of(page, size);
             return ResponseEntity.ok(jobApplicationService.getJobApplicationByUserId(username, pageable));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ResponseMessage(400, "Không tìm thấy người dùng"));
+                    .body(new PageImpl<>(Collections.emptyList(), PageRequest.of(page, size), 0));
         }
     }
 
@@ -91,14 +91,5 @@ public class JobApplicationController {
     @GetMapping("/public/count-applied/{userId}")
     public Long countApplied(@PathVariable String userId) {
         return jobApplicationService.countAppliedSuccess(userId);
-    }
-
-    @GetMapping("/applications/{applicationId}/detail")
-    public ResponseEntity<?> getJobApplicationDetail(@PathVariable String applicationId) {
-        try {
-            return ResponseEntity.ok(jobApplicationService.getJobApplicationDetail(applicationId));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin đơn ứng tuyển: " + e.getMessage()));
-        }
     }
 }

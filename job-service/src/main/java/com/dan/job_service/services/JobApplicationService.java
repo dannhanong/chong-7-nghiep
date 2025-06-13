@@ -16,5 +16,4 @@ public interface JobApplicationService {
     Page<JobApplicationResponse> getJobApplicationByUserId(String username, Pageable pageable);
     Page<JobApplicationResponse> getJobApplicationByJobId(String jobId, String username, Pageable pageable);
     long countAppliedSuccess(String userId);
-    Object getJobApplicationDetail(String applicationId);
 }

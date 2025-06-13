@@ -236,51 +236,39 @@ class ContentBasedRecommender:
         """Lấy các công việc tương tự với công việc có ID cho trước"""
         try:
             # Đảm bảo mô hình đã được xây dựng
-            if not hasattr(self, 'tfidf_matrix') or not hasattr(self, 'jobs_df'):
-                logger.info("TF-IDF matrix or jobs DataFrame not found, fitting model...")
+            if not hasattr(self, 'tfidf_matrix'):
+                logger.info("TF-IDF matrix not found, fitting model...")
                 success = self.fit()
                 if not success:
                     logger.error("Failed to build TF-IDF model")
                     return []
             
-            # Kiểm tra dữ liệu
-            if self.jobs_df.empty:
-                logger.warning("Jobs DataFrame is empty")
-                return []
+            # Chuyển đổi job_id thành ObjectId nếu cần
+            if isinstance(job_id, str):
+                try:
+                    job_id_obj = ObjectId(job_id)
+                except:
+                    logger.error(f"Invalid job_id format: {job_id}")
+                    return []
+            else:
+                job_id_obj = job_id
                 
-            if self.tfidf_matrix.shape[0] == 0:
-                logger.warning("TF-IDF matrix is empty")
-                return []
-            
-            logger.info(f"Finding recommendations for job ID: {job_id}")
-            
-            # Chuẩn hóa job_id thành chuỗi
-            job_id_str = str(job_id)
-            
-            # Tạo mảng các ID dạng chuỗi từ DataFrame để tìm kiếm hiệu quả hơn
-            job_ids = self.jobs_df['_id'].astype(str).tolist()
-            
-            # Tìm job_idx bằng cách sử dụng index
-            try:
-                job_idx = job_ids.index(job_id_str)
-            except ValueError:
+            # Tìm job trong DataFrame
+            job_idx = None
+            for idx, job in self.jobs_df.iterrows():
+                if str(job.get('_id')) == str(job_id):
+                    job_idx = idx
+                    break
+                    
+            if job_idx is None:
                 logger.warning(f"Job with ID {job_id} not found in DataFrame")
                 return []
                 
-            # Log thông tin về công việc đang xem xét
-            job_info = self.jobs_df.iloc[job_idx]
-            logger.info(f"Finding similar jobs for: {job_info.get('title', 'Unknown')} (ID: {job_id_str})")
-            
             # Lấy vector của job này
             job_vector = self.tfidf_matrix[job_idx]
             
             # Tính độ tương đồng với tất cả công việc khác
             cosine_sim = cosine_similarity(job_vector, self.tfidf_matrix)
-            
-            # Kiểm tra kết quả cosine_similarity
-            if cosine_sim.shape[1] != self.tfidf_matrix.shape[0]:
-                logger.error(f"Cosine similarity shape mismatch: {cosine_sim.shape} vs {self.tfidf_matrix.shape}")
-                return []
             
             # Lấy điểm của tất cả công việc
             sim_scores = list(enumerate(cosine_sim[0]))
@@ -291,50 +279,27 @@ class ContentBasedRecommender:
             # Loại bỏ chính job đang xét
             sim_scores = [score for score in sim_scores if score[0] != job_idx]
             
-            # Giới hạn số lượng kết quả
+            # Lấy top công việc
             sim_scores = sim_scores[:limit]
-            
-            # Kiểm tra có kết quả không
-            if not sim_scores:
-                logger.warning(f"No similar jobs found for job ID: {job_id}")
-                return []
             
             # Log top 5 công việc được gợi ý
             logger.info(f"Top 5 similar jobs to job {job_id}:")
-            for i, (idx, score) in enumerate(sim_scores[:min(5, len(sim_scores))]):
-                if idx < len(self.jobs_df):
-                    job = self.jobs_df.iloc[idx]
-                    job_title = job.get('title', 'Unknown')
-                    rec_job_id = str(job.get('_id', 'Unknown'))
-                    logger.info(f"{i+1}. Job: {job_title} (ID: {rec_job_id}) - Score: {score:.4f}")
-                    
-                    # Log thêm thông tin giúp debug
-                    if score > 0.8:  # Score cao bất thường
-                        job_content = job.get('content', '')[:100]
-                        source_content = job_info.get('content', '')[:100]
-                        logger.info(f"   High similarity detected. Job content: {job_content}...")
-                        logger.info(f"   Source job content: {source_content}...")
+            for i, (idx, score) in enumerate(sim_scores[:5]):
+                job = self.jobs_df.iloc[idx]
+                job_title = job.get('title', 'Unknown')
+                job_id = str(job.get('_id', 'Unknown'))
+                logger.info(f"{i+1}. Job: {job_title} (ID: {job_id}) - Score: {score:.4f}")
             
             # Lấy chỉ số của công việc
-            job_indices = [i[0] for i in sim_scores if i[0] < len(self.jobs_df)]
-            
-            if not job_indices:
-                logger.warning("No valid job indices found after filtering")
-                return []
+            job_indices = [i[0] for i in sim_scores]
             
             # Lấy thông tin công việc và thêm điểm tương đồng
             recommendations = self.jobs_df.iloc[job_indices].copy()
-            recommendations['similarity_score'] = [i[1] for i in sim_scores if i[0] < len(self.jobs_df)]
+            recommendations['similarity_score'] = [i[1] for i in sim_scores]
             recommendations['recommendation_score'] = recommendations['similarity_score']
             
-            # Thêm log số lượng kết quả trả về
-            logger.info(f"Returning {len(recommendations)} job recommendations with scores ranging from {recommendations['similarity_score'].min():.4f} to {recommendations['similarity_score'].max():.4f}")
-            
             return recommendations.to_dict('records')
-                
+            
         except Exception as e:
-            logger.error(f"Error getting job recommendations: {e}", exc_info=True)
-            # Ghi log stack trace đầy đủ
-            import traceback
-            logger.error(f"Stack trace: {traceback.format_exc()}")
+            logger.error(f"Error getting job recommendations: {e}")
             return []

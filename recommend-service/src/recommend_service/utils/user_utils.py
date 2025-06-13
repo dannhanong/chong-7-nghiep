@@ -1,6 +1,5 @@
 import logging
 from typing import Optional
-from bson import ObjectId
 from recommend_service.db.mongodb import MongoDB
 from recommend_service.config.settings import settings
 
@@ -118,37 +117,3 @@ def get_all_usernames() -> list[str]:
     except Exception as e:
         logger.error(f"Error retrieving all usernames: {e}")
         return []
-    
-def get_user_info_by_user_id(user_id: str) -> Optional[dict]:
-    """
-    Lấy thông tin người dùng từ user_id
-    
-    Args:
-        user_id: ID người dùng cần tìm
-        
-    Returns:
-        Thông tin người dùng nếu tìm thấy, None nếu không tìm thấy
-    """
-    if not user_id:
-        return None
-        
-    try:
-        db = MongoDB()
-        users_collection = db.get_collection(settings.MONGODB_USER_DATABASE, settings.MONGODB_USERS_COLLECTION)
-        object_user_id = ObjectId(user_id) if isinstance(user_id, str) else user_id
-        user = users_collection.find_one({"_id": object_user_id})
-
-        if user:
-            return {
-                "user_id": str(user["_id"]),
-                "name": user.get("name"),
-                "email": user.get("email"),
-                "phone_number": user.get("phoneNumber"),
-            }
-            
-        logger.warning(f"User ID {user_id} not found in database")
-        return None
-        
-    except Exception as e:
-        logger.error(f"Error getting user info by user_id: {e}")
-        return None

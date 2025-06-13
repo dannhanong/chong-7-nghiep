@@ -10,8 +10,6 @@ public class Endpoints {
         };
 
         public static final String[] ADMIN_GET_ENDPOINTS = {
-                BASE_JOB_URL + "/admin/**",
-                BASE_CATEGORY_URL + "/admin/**",
         };
 
         public static final String[] ADMIN_POST_ENDPOINTS = {

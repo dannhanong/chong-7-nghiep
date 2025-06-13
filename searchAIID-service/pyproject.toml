@@ -22,15 +22,9 @@ dependencies = [
     "pymongo>=4.12.1", 
     "scikit-learn>=1.6.1", 
     "pandas>=2.2.3", 
-    "numpy>=2.3.0", 
+    "numpy>=2.2.5", 
     "pyjwt>=2.10.1", 
-    "confluent-kafka>=2.10.0", 
-    "onnx>=1.18.0", 
-    "onnxruntime>=1.22.0", 
-    "onnxruntime-extensions>=0.14.0", 
-    "pytesseract>=0.3.13", 
-    "opencv-python-headless>=4.11.0.86", 
-    "pyzbar>=0.1.9",
+    "confluent-kafka>=2.10.0",
 ]
 requires-python = ">=3.12"
 readme = "README.md"

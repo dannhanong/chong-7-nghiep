@@ -20,7 +20,7 @@ async def get_job_recommendations(
     page: int = Query(0, description="Trang (bắt đầu từ 0)"),
     size: int = Query(10, description="Số phần tử mỗi trang"),
     keyword: Optional[str] = None,
-    category_ids: Optional[str] = Query(None, description="Danh sách ID danh mục, cách nhau bằng dấu phẩy"),
+    category_id: Optional[str] = None,
     salary_min: Optional[int] = None,
     salary_max: Optional[int] = None,
     experience_level: Optional[str] = None,
@@ -34,16 +34,19 @@ async def get_job_recommendations(
     try:
         username = get_current_username(request)
 
+        print (f"Username: {username}")
         # Tạo bộ lọc từ query params
         filters = {}
         if keyword:
             filters["keyword"] = keyword
-        if category_ids:
-            filters["category_ids"] = [cat.strip() for cat in category_ids.split(",") if cat.strip()]
+        if category_id:
+            filters["category_id"] = category_id
         if salary_min:
             filters["salary_min"] = salary_min
         if salary_max:
             filters["salary_max"] = salary_max
+        if experience_level:
+            filters["experience_level"] = experience_level
             
         # Chỉ truyền filters khi có ít nhất 1 bộ lọc
         if not filters:
@@ -63,7 +66,7 @@ async def get_job_recommendations(
         logger.error(f"Error in get_profile_recommendations: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-@router.get("/similar/{job_id}")
+@router.get("/similar-jobs/{job_id}")
 async def get_similar_jobs(
     request: Request,
     job_id: str,

@@ -4,14 +4,6 @@ from searchaiid_service.config.settings import settings
 from searchaiid_service.utils.image_utils import load_image
 from searchaiid_service.core.ocr.extractor import extract_json_from_text
 import logging
-from torch.quantization import quantize_dynamic, prepare, convert, get_default_qconfig
-import onnxruntime as ort
-import onnx
-from onnxruntime.quantization import quantize_dynamic as ort_quantize_dynamic
-import tempfile
-import numpy as np
-
-logger = logging.getLogger(__name__)
 
 class VinternModel:
     _instance = None
