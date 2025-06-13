@@ -7,6 +7,8 @@ import com.dan.job_service.models.Category;
 import com.dan.job_service.repositories.CategoryRepository;
 import com.dan.job_service.repositories.JobRepository;
 import com.dan.job_service.services.CategoryService;
+import com.dan.job_service.services.JobService;
+import com.netflix.discovery.converters.Auto;
 
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class CategoryServiceImpl implements CategoryService {
     private CategoryRepository categoryRepository;
     @Autowired
     private JobRepository jobRepository;
+
+    @Autowired
+    private JobService jobService;
 
     @Override
     public ResponseMessage create(CategoryRequest categoryRequest) {
@@ -79,8 +84,10 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.findById(id).map(category -> {
             category.setDeletedAt(LocalDateTime.now());
             categoryRepository.save(category);
-
-            deleteChildrenCategories(id);
+             deleteChildrenCategories(id);
+            // xóa tất cả các công việc liên quản đến danh mục này
+            jobService.deleteJobsByCategoryId(id);
+           
             
             return ResponseMessage.builder()
                     .status(200)
@@ -147,6 +154,8 @@ public class CategoryServiceImpl implements CategoryService {
         childrenCategories.forEach(childCategory -> {
             childCategory.setDeletedAt(LocalDateTime.now());
             categoryRepository.save(childCategory);
+            jobService.deleteJobsByCategoryId(childCategory.getId());
+
         });
     }
 

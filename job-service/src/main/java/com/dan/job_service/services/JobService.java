@@ -32,4 +32,7 @@ public interface JobService {
     ResponseMessage markJobAsUndone(String jobId, String username);
     Page<JobDetail> getAppliedJobs(String username, Pageable pageable);
     ResponseMessage testEmJob();
+    // xóa công việc nếu danh mục của nó bị xóa
+    void deleteJobsByCategoryId(String categoryId);
+    
 }

@@ -3,6 +3,8 @@ package com.dan.job_service.models;
 import java.time.LocalDateTime;
 
 import jakarta.validation.constraints.Min;
+
+import org.springframework.cglib.core.Local;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -45,4 +47,5 @@ public class JobApplication {
     
     LocalDateTime appliedAt;
     LocalDateTime updatedAt;
+    LocalDateTime deleteAt;
 }

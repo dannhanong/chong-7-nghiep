@@ -12,9 +12,21 @@ import java.util.Map;
 
 public interface JobApplicationService {
     ResponseMessage applyJob(JobApplicationRequest request, String jobId, String username);
+
     ResponseMessage updateStatus(String id, String status);
+
     Page<JobApplicationResponse> getJobApplicationByUserId(String username, Pageable pageable);
+
     Page<JobApplicationResponse> getJobApplicationByJobId(String jobId, String username, Pageable pageable);
+
+    Page<JobApplicationResponse> getPublicJobApplicationByJobId(String jobId, Pageable pageable);
+
     long countAppliedSuccess(String userId);
+
     Object getJobApplicationDetail(String applicationId);
+
+    // xóa đơn ứng tuyển theo jobId
+    void deleteByJobId(String jobId);
+
+    ResponseMessage delete(String id);
 }

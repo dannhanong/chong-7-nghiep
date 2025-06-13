@@ -22,4 +22,9 @@ public interface JobRepository extends MongoRepository<Job, String> {
     // Thêm phương thức mới để đếm số job theo userId và active = true
     Integer countByUserIdAndActiveTrue(String userId);
     Page<Job> findJobsByUserIdAndActiveTrue(String userId, Pageable pageable);
+
+    // thêm phương thức để tìm kiếm công việc theo danh mục không truyền phân trang
+    List<Job> findByCategoryIdAndActiveTrue(String categoryId);
+
+
 }

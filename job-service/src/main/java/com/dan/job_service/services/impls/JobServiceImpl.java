@@ -96,8 +96,7 @@ public class JobServiceImpl implements JobService {
 
             // Tạo tiến dộ công việc
             JobProgress initialProgress = JobProgress.builder()
-                    .jobId(savedJob.getId())
-                    .userId(userId)
+                    .jobId(savedJob.getId()).userId(userId)
                     .status(JobStatus.SEARCHING)
                     .createdAt(LocalDateTime.now())
                     .build();
@@ -209,7 +208,13 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Page<Job> getJobsCategoryId(String categoryId, Pageable pageable) {
-        return null;
+        if (categoryId != null && !categoryId.isEmpty()) {
+            categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+            return jobRepository.findByCategoryIdAndActiveTrue(categoryId, pageable);
+        } else {
+            return jobRepository.findByActiveTrue(pageable);
+        }
     }
 
     @Override
@@ -493,5 +498,26 @@ public class JobServiceImpl implements JobService {
                 .status(200)
                 .message("Cập nhật embedding cho tất cả công việc thành công")
                 .build();
+    }
+
+    @Override
+    public void deleteJobsByCategoryId(String categoryId) {
+        try {
+            List<Job> jobs = jobRepository.findByCategoryIdAndActiveTrue(categoryId);
+            if (jobs.isEmpty()) {
+                log.info("Không có công việc nào thuộc danh mục {}", categoryId);
+                return;
+            }
+            for (Job job : jobs) {
+                job.setActive(false);
+                job.setStatus(false);
+                job.setDeletedAt(LocalDateTime.now());
+                jobRepository.save(job);
+            }
+            log.info("Đã xóa tất cả công việc thuộc danh mục {}", categoryId);
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa công việc theo danh mục {}: {}", categoryId, e.getMessage(), e);
+            throw e;
+        }
     }
 }

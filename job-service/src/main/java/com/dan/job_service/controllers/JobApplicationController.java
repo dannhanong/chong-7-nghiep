@@ -9,6 +9,7 @@ import com.dan.job_service.security.jwt.JwtService;
 import com.dan.job_service.services.JobApplicationService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.*;
 
 import java.util.Collections;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ public class JobApplicationController {
     private final JobApplicationService jobApplicationService;
     private final JwtService jwtService;
     private final UserInteractionRepository userInteractionRepository;
+    private static final Logger logger = LoggerFactory.getLogger(JobApplicationController.class);
 
     @PostMapping("/private/apply/{jobId}")
     public ResponseEntity<ResponseMessage> applyJob(
@@ -75,6 +77,16 @@ public class JobApplicationController {
         return ResponseEntity.ok(jobApplicationService.getJobApplicationByJobId(jobId, username, pageable));
     }
 
+    @GetMapping("/public/list-application/{jobId}")
+    public ResponseEntity<Page<JobApplicationResponse>> getPublicApplicationsById(
+            @PathVariable String jobId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+          ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(jobApplicationService.getPublicJobApplicationByJobId(jobId, pageable));
+    }
+
     @PutMapping("/private/status/{id}")
     public ResponseEntity<ResponseMessage> updateStatus(
             @PathVariable String id,
@@ -98,7 +110,13 @@ public class JobApplicationController {
         try {
             return ResponseEntity.ok(jobApplicationService.getJobApplicationDetail(applicationId));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ResponseMessage(400, "Lỗi lấy thông tin đơn ứng tuyển: " + e.getMessage()));
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi lấy thông tin đơn ứng tuyển: " + e.getMessage()));
         }
+    }
+
+    @DeleteMapping("/private/delete/{applicationId}")
+    public ResponseEntity<ResponseMessage> deleteJobApplication(@PathVariable String id) {
+        return ResponseEntity.ok(jobApplicationService.delete(id));
     }
 }
