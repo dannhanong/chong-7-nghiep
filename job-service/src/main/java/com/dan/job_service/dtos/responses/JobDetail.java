@@ -41,5 +41,6 @@ public class JobDetail {
     String contentUri;
     WorkingType workingType;
     WorkingForm workingForm;
+    String file;
     Integer sumJob;
 }

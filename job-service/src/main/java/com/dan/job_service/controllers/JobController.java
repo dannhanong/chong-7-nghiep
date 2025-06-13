@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +32,12 @@ public class JobController {
     @Autowired
     private JwtService jwtService;
 
-    @PostMapping("/private/create")
-    public ResponseEntity<ResponseMessage> createJob(@Valid @RequestBody JobRequest jobRequest,
+    @PostMapping(
+            value = "/private/create",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ResponseMessage> createJob(
+            @Valid @ModelAttribute JobRequest jobRequest,
             HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
@@ -72,7 +77,7 @@ public class JobController {
 
     @PutMapping("/private/update/{id}")
     public ResponseEntity<?> updateJob(@PathVariable String id, @Valid @RequestBody JobRequest jobRequest,
-            HttpServletRequest request) {
+                                       HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
             jobService.update(id, jobRequest, username);
@@ -86,7 +91,7 @@ public class JobController {
 
     @PutMapping("/public/update/{id}")
     public ResponseEntity<?> userUpdateJob(@PathVariable String id, @Valid @RequestBody JobRequest jobRequest,
-            HttpServletRequest request) {
+                                           HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
             jobService.userUpdateJob(id, jobRequest, username);
@@ -102,7 +107,7 @@ public class JobController {
     public ResponseEntity<?> deleteJobById(@PathVariable String id, HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
-            
+
             jobService.delete(id, username);
             return ResponseEntity.ok(new ResponseMessage(200, "Xóa công việc thành công"));
         } catch (Exception e) {
@@ -184,11 +189,11 @@ public class JobController {
             String username = jwtService.getUsernameFromRequest(request);
             Pageable pageable = PageRequest.of(page, size);
             Page<JobDetail> appliedJobsPage = jobService.getAppliedJobs(username, pageable);
-            
+
             if (appliedJobsPage.isEmpty()) {
                 return ResponseEntity.ok(new ResponseMessage(200, "Bạn chưa ứng tuyển công việc nào"));
             }
-            
+
             return ResponseEntity.ok(appliedJobsPage);
         } catch (Exception e) {
             log.error("Lỗi lấy danh sách công việc đã ứng tuyển: {}", e.getMessage(), e);
@@ -196,7 +201,7 @@ public class JobController {
                     .body(new ResponseMessage(400, "Lỗi khi lấy danh sách công việc đã ứng tuyển: " + e.getMessage()));
         }
     }
-    
+
 
     @PutMapping("/private/{jobId}/mark-done")
     public ResponseEntity<?> markJobAsDone(@PathVariable String jobId, HttpServletRequest request) {

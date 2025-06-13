@@ -7,6 +7,7 @@ import com.dan.job_service.dtos.enums.WorkingType;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.web.multipart.MultipartFile;
 
 public record JobRequest(
     String categoryId,
@@ -25,6 +26,7 @@ public record JobRequest(
     String contentUri,
     WorkingForm workingForm,
     WorkingType workingType,
+    MultipartFile file,
     Boolean status,
     Boolean active,
     Boolean done
