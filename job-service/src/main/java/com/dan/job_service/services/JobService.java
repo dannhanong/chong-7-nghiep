@@ -34,5 +34,7 @@ public interface JobService {
     ResponseMessage testEmJob();
     // xóa công việc nếu danh mục của nó bị xóa
     void deleteJobsByCategoryId(String categoryId);
+
+    
     
 }
