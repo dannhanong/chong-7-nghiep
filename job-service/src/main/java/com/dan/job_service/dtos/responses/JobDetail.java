@@ -1,6 +1,7 @@
 package com.dan.job_service.dtos.responses;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.dan.job_service.dtos.enums.WorkingForm;
 import com.dan.job_service.dtos.enums.WorkingType;
@@ -42,5 +43,6 @@ public class JobDetail {
     WorkingType workingType;
     WorkingForm workingForm;
     String file;
+    List<String> otherFiles;
     Integer sumJob;
 }

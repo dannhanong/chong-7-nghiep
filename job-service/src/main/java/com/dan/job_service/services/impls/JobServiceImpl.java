@@ -99,7 +99,7 @@ public class JobServiceImpl implements JobService {
                     .build();
 
             MultipartFile file = jobRequest.file();
-            if(file != null && !file.isEmpty()){
+            if (file != null && !file.isEmpty()) {
                 Map<String, String> res = fileServiceClient.uploadFile(file);
                 String fileCode = res.get("fileCode");
                 newJob.setFile(fileCode);
@@ -383,13 +383,13 @@ public class JobServiceImpl implements JobService {
 
             Page<JobApplication> userApplications = jobApplicationRepository.findByUserId(userId, pageable);
             List<JobDetail> appliedJobs = userApplications.getContent().stream()
-                .map(application -> {
-                    Job job = jobRepository.findById(application.getJobId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công việc"));
-                    return fromJobToJobDetail(job);
-                })
-                .collect(Collectors.toList());
-            
+                    .map(application -> {
+                        Job job = jobRepository.findById(application.getJobId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công việc"));
+                        return fromJobToJobDetail(job);
+                    })
+                    .collect(Collectors.toList());
+
             log.info("Found {} applied jobs for user {}", appliedJobs.size(), username);
             return new PageImpl<>(appliedJobs, pageable, userApplications.getTotalElements());
         } catch (Exception e) {
@@ -454,6 +454,8 @@ public class JobServiceImpl implements JobService {
                 .status(job.getStatus())
                 .active(job.getActive())
                 .file(job.getFile())
+                .otherFiles(job.getOtherImageCodes()) // <-- DÒNG MÃ ĐÃ ĐƯỢC THÊM VÀO
+
                 .createdAt(dateFormatter.formatDate(job.getCreatedAt()))
                 .updatedAt(dateFormatter.formatDate(job.getUpdatedAt()))
                 .contentUri(job.getContentUri())
@@ -469,55 +471,55 @@ public class JobServiceImpl implements JobService {
         try {
             Job job = jobRepository.findById(jobId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
-            
+
             UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
             String userId = user.getId();
-            
+
             // Kiểm tra quyền: chỉ chủ job mới có thể đánh dấu hoàn thành
             if (!userId.equals(job.getUserId())) {
                 throw new RuntimeException("Bạn không phải là người tạo công việc này");
             }
-            
+
             // Kiểm tra job đã active chưa
             if (job.getActive() == null || !job.getActive()) {
                 throw new RuntimeException("Công việc chưa được kích hoạt");
             }
-            
+
             job.setDone(true);
             job.setUpdatedAt(LocalDateTime.now());
             jobRepository.save(job);
-            
+
             log.info("Job {} đã được đánh dấu hoàn thành bởi user {}", jobId, username);
             return new ResponseMessage(200, "Đánh dấu công việc hoàn thành thành công");
-            
+
         } catch (Exception e) {
             log.error("Lỗi đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
             throw e;
         }
     }
-    
+
     @Override
     @Transactional
     public ResponseMessage markJobAsUndone(String jobId, String username) {
         try {
             Job job = jobRepository.findById(jobId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
-            
+
             UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
             String userId = user.getId();
-            
+
             // Kiểm tra quyền: chỉ chủ job mới có thể hủy đánh dấu hoàn thành
             if (!userId.equals(job.getUserId())) {
                 throw new RuntimeException("Bạn không phải là người tạo công việc này");
             }
-            
+
             job.setDone(false);
             job.setUpdatedAt(LocalDateTime.now());
             jobRepository.save(job);
-            
+
             log.info("Job {} đã được hủy đánh dấu hoàn thành bởi user {}", jobId, username);
             return new ResponseMessage(200, "Hủy đánh dấu công việc hoàn thành thành công");
-            
+
         } catch (Exception e) {
             log.error("Lỗi hủy đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
             throw e;
