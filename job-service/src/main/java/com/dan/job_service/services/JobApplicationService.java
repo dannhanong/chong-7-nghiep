@@ -2,6 +2,7 @@ package com.dan.job_service.services;
 
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
+import com.dan.job_service.dtos.responses.JobApplicationProfileResponse;
 import com.dan.job_service.dtos.responses.JobApplicationResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import org.springframework.data.domain.Page;
@@ -19,7 +20,7 @@ public interface JobApplicationService {
 
     Page<JobApplicationResponse> getJobApplicationByJobId(String jobId, String username, Pageable pageable);
 
-    Page<JobApplicationResponse> getPublicJobApplicationByJobId(String jobId, Pageable pageable);
+    Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String jobId, Pageable pageable);
 
     long countAppliedSuccess(String userId);
 
@@ -29,4 +30,6 @@ public interface JobApplicationService {
     void deleteByJobId(String jobId);
 
     ResponseMessage delete(String id);
+    
+
 }

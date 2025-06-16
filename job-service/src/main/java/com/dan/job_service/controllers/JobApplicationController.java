@@ -2,6 +2,7 @@ package com.dan.job_service.controllers;
 
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
 import com.dan.job_service.dtos.requets.UpdateStatusRequest;
+import com.dan.job_service.dtos.responses.JobApplicationProfileResponse;
 import com.dan.job_service.dtos.responses.JobApplicationResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.repositories.UserInteractionRepository;
@@ -78,7 +79,7 @@ public class JobApplicationController {
     }
 
     @GetMapping("/public/list-application/{jobId}")
-    public ResponseEntity<Page<JobApplicationResponse>> getPublicApplicationsById(
+    public ResponseEntity<Page<JobApplicationProfileResponse>> getPublicApplicationsById(
             @PathVariable String jobId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size

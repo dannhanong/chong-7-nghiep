@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.models.Job;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,8 @@ public interface JobRepository extends MongoRepository<Job, String> {
 
     // thêm phương thức để tìm kiếm công việc theo danh mục không truyền phân trang
     List<Job> findByCategoryIdAndActiveTrue(String categoryId);
+
+    // Thêm tổng số job mà người dùng đã làm hoàn thành
 
 
 }

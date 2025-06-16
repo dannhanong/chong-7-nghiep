@@ -23,5 +23,6 @@ public interface JobApplicationRepository extends MongoRepository<JobApplication
     long countApprovedApplicationsByUserId(String userId);
     // Tìm kiếm đơn ứng tuyển theo jobId 
     List<JobApplication> findByJobId(String jobId);
+    Integer countByUserIdAndStatus(String userId, ApplicationStatus status);
 
 }
