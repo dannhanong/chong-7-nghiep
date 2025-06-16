@@ -157,7 +157,6 @@ class HybridRecommender:
                     else:
                         user_info = get_user_info_by_user_id(job['userId'])
                         if user_info:
-                            print(f"Enriching job {job['_id']} with user info: {user_info}")
                             job['user'] = user_info
                             del job['userId']
                         else:
@@ -534,12 +533,13 @@ class HybridRecommender:
         """
         if not recommendations:
             return []
+            
         try:
             # Lấy thông tin chi tiết từ database
             jobs_collection = self.db.get_collection(settings.MONGODB_JOB_DATABASE, settings.MONGODB_JOBS_COLLECTION)
             job_ids = [ObjectId(job_id) if not isinstance(job_id, ObjectId) else job_id 
                     for job_id in recommendations.keys()]
-                        
+            
             jobs = list(jobs_collection.find({
                 "_id": {"$in": job_ids},
                 "active": True,
@@ -555,7 +555,6 @@ class HybridRecommender:
                 
                 # Thêm điểm đề xuất (dùng str(job['_id']) để so sánh với key trong recommendations)
                 original_id = str(job['_id'])
-
                 job_dict['recommendation_score'] = recommendations.get(original_id, 0)
                 
                 serialized_jobs.append(job_dict)

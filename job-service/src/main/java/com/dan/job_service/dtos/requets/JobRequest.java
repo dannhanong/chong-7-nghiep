@@ -1,6 +1,7 @@
 package com.dan.job_service.dtos.requets;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.dan.job_service.dtos.enums.WorkingForm;
 import com.dan.job_service.dtos.enums.WorkingType;
@@ -27,6 +28,7 @@ public record JobRequest(
     WorkingForm workingForm,
     WorkingType workingType,
     MultipartFile file,
+    List<MultipartFile> otherFiles,
     Boolean status,
     Boolean active,
     Boolean done

@@ -6,7 +6,6 @@ import com.dan.job_service.http_clients.IdentityServiceClient;
 import com.dan.job_service.models.JobProgress;
 import com.dan.job_service.repositories.JobProgressRepository;
 import com.dan.job_service.repositories.JobRepository;
-import com.dan.job_service.security.jwt.JwtService;
 import com.dan.job_service.services.JobProgressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

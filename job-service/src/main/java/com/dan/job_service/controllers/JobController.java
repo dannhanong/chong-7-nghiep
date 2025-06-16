@@ -76,7 +76,7 @@ public class JobController {
     }
 
     @PutMapping("/private/update/{id}")
-    public ResponseEntity<?> updateJob(@PathVariable String id, @Valid @RequestBody JobRequest jobRequest,
+    public ResponseEntity<?> updateJob(@PathVariable String id, @Valid @ModelAttribute JobRequest jobRequest,
                                        HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
@@ -90,7 +90,7 @@ public class JobController {
     }
 
     @PutMapping("/public/update/{id}")
-    public ResponseEntity<?> userUpdateJob(@PathVariable String id, @Valid @RequestBody JobRequest jobRequest,
+    public ResponseEntity<?> userUpdateJob(@PathVariable String id, @Valid @ModelAttribute JobRequest jobRequest,
                                            HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);

@@ -104,6 +104,13 @@ public class JobServiceImpl implements JobService {
                 String fileCode = res.get("fileCode");
                 newJob.setFile(fileCode);
             }
+
+            if (jobRequest.otherFiles() != null && !jobRequest.otherFiles().isEmpty()) {
+                List<MultipartFile> otherFiles = jobRequest.otherFiles();
+                List<String> fileCodes = fileServiceClient.uploadMultipleFilesForJob(otherFiles);
+                newJob.setOtherImageCodes(fileCodes);
+            }
+
             Job savedJob = jobRepository.save(newJob);
 
             // Tạo tiến dộ công việc
@@ -165,6 +172,27 @@ public class JobServiceImpl implements JobService {
             existingJob.setStatus(jobRequest.status() != null ? jobRequest.status() : existingJob.getStatus());
             existingJob.setActive(jobRequest.active() != null ? jobRequest.active() : existingJob.getActive());
             existingJob.setDone(jobRequest.done() != null ? jobRequest.done() : existingJob.getDone());
+
+            MultipartFile file = jobRequest.file();
+            if (file != null && !file.isEmpty()) {
+                String existingFileCode = existingJob.getFile();
+                Map<String, String> res = fileServiceClient.uploadFile(file);
+                String fileCode = res.get("fileCode");
+                existingJob.setFile(fileCode);
+                if (existingFileCode != null && !existingFileCode.isEmpty()) {
+                    kafkaTemplate.send("delete-file-by-fileCode", existingFileCode);
+                }
+            }
+            if (jobRequest.otherFiles() != null && !jobRequest.otherFiles().isEmpty()) {
+                List<String> existingOtherImageCodes = existingJob.getOtherImageCodes();
+                if (existingOtherImageCodes != null && !existingOtherImageCodes.isEmpty()) {
+                    kafkaTemplate.send("delete-file-by-fileCodes", existingOtherImageCodes);
+                }
+
+                List<MultipartFile> otherFiles = jobRequest.otherFiles();
+                List<String> fileCodes = fileServiceClient.uploadMultipleFilesForJob(otherFiles);
+                existingJob.setOtherImageCodes(fileCodes);
+            }
 
             jobRepository.save(existingJob);
 
