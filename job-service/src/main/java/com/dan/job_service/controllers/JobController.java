@@ -32,10 +32,7 @@ public class JobController {
     @Autowired
     private JwtService jwtService;
 
-    @PostMapping(
-            value = "/private/create",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PostMapping(value = "/private/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseMessage> createJob(
             @Valid @ModelAttribute JobRequest jobRequest,
             HttpServletRequest request) {
@@ -77,7 +74,7 @@ public class JobController {
 
     @PutMapping("/private/update/{id}")
     public ResponseEntity<?> updateJob(@PathVariable String id, @Valid @ModelAttribute JobRequest jobRequest,
-                                       HttpServletRequest request) {
+            HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
             jobService.update(id, jobRequest, username);
@@ -91,7 +88,7 @@ public class JobController {
 
     @PutMapping("/public/update/{id}")
     public ResponseEntity<?> userUpdateJob(@PathVariable String id, @Valid @ModelAttribute JobRequest jobRequest,
-                                           HttpServletRequest request) {
+            HttpServletRequest request) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
             jobService.userUpdateJob(id, jobRequest, username);
@@ -202,7 +199,6 @@ public class JobController {
         }
     }
 
-
     @PutMapping("/private/{jobId}/mark-done")
     public ResponseEntity<?> markJobAsDone(@PathVariable String jobId, HttpServletRequest request) {
         try {
@@ -228,6 +224,38 @@ public class JobController {
             log.error("Lỗi hủy đánh dấu công việc hoàn thành ID {}: {}", jobId, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(new ResponseMessage(400, "Lỗi khi hủy đánh dấu công việc hoàn thành: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/private/update-status/{jobId}")
+    public ResponseEntity<?> updateJobStatus(
+            @PathVariable String jobId,
+            @RequestParam Boolean status,
+            HttpServletRequest request) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            ResponseMessage response = jobService.updateJobStatus(jobId, status, username);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Lỗi cập nhật status công việc ID {}: {}", jobId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi cập nhật trạng thái công việc: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/private/update-active/{jobId}")
+    public ResponseEntity<?> updateJobActive(
+            @PathVariable String jobId,
+            @RequestParam Boolean active,
+            HttpServletRequest request) {
+        try {
+            String username = jwtService.getUsernameFromRequest(request);
+            ResponseMessage response = jobService.updateJobActive(jobId, active, username);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Lỗi cập nhật active công việc ID {}: {}", jobId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi khi cập nhật trạng thái active: " + e.getMessage()));
         }
     }
 }

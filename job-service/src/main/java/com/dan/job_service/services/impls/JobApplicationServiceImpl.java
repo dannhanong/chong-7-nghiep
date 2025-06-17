@@ -228,7 +228,7 @@ public Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String
                         .pathName(userProfile.getPathName())
                         .averageRating(userProfile.getAverageRating())
                         .skills(userProfile.getSkills())
-                        .offerSalary(application.getOfferSalary())
+                        .appliedAt(application.getAppliedAt())
                         .offerPlan(application.getOfferPlan())
                         .offerSkill(application.getOfferSkill())
                         .totalCountJobDone(totalCountJobDone)
