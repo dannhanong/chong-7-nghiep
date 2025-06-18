@@ -564,20 +564,19 @@ public class JobServiceImpl implements JobService {
         }
     }
 
-    @Override
-    @Transactional
-    public ResponseMessage updateJobStatus(String jobId, Boolean status, String username) {
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
-        UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
-        if (!user.getId().equals(job.getUserId())) {
-            throw new RuntimeException("Bạn không phải là người tạo công việc này");
-        }
-        job.setStatus(status);
-        job.setUpdatedAt(LocalDateTime.now());
-        jobRepository.save(job);
-        return new ResponseMessage(200, "Cập nhật trạng thái status thành công");
-    }
+
+@Override
+@Transactional
+public ResponseMessage updateJobStatus(String jobId, Boolean status, String username) {
+    Job job = jobRepository.findById(jobId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+    UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+
+    job.setStatus(status);
+    job.setUpdatedAt(LocalDateTime.now());
+    jobRepository.save(job);
+    return new ResponseMessage(200, "Cập nhật trạng thái status thành công");
+}
 
     @Override
     @Transactional
