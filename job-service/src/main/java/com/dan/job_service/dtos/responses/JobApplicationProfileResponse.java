@@ -1,6 +1,8 @@
 package com.dan.job_service.dtos.responses;
 
 import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -18,7 +20,7 @@ public class JobApplicationProfileResponse {
      String avatarId;
      String pathName;
      Double averageRating;
-     long offerSalary;
+      LocalDateTime appliedAt;
      String offerPlan;
      String offerSkill;
      Integer totalCountJobDone;
