@@ -51,10 +51,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         if (jobApplicationRepository.findByUserIdAndJobId(userId, jobId).isPresent()) {
             throw new RuntimeException("Bạn đã ứng tuyển công việc này");
         }
-        if (request.offerSalary() < job.getSalaryMin() || request.offerSalary() > job.getSalaryMax()) {
-            throw new RuntimeException(
-                    "Lương đề xuất phải nằm trong khoảng từ " + job.getSalaryMin() + " đến " + job.getSalaryMax());
-        }
 
         JobApplication application = JobApplication.builder()
                 .userId(userId)

@@ -22,6 +22,7 @@ public class JobApplicationProfileResponse {
      Double averageRating;
       LocalDateTime appliedAt;
      String offerPlan;
+     long offerSalary;
      String offerSkill;
      Integer totalCountJobDone;
      List<SkillResponse> skills;
