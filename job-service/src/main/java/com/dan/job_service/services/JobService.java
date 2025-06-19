@@ -1,6 +1,7 @@
 package com.dan.job_service.services;
 
 import com.dan.job_service.dtos.requets.JobRequest;
+import com.dan.job_service.dtos.responses.JobApplicationApplied;
 import com.dan.job_service.dtos.responses.JobDetail;
 import com.dan.job_service.dtos.responses.JobsLast24HoursResponse;
 import com.dan.job_service.dtos.responses.ResponseMessage;
@@ -22,7 +23,7 @@ public interface JobService {
 
     List<JobsLast24HoursResponse> getJobsPostedLast24Hours();
 
-    Page<JobDetail> getAll(String categoryId, String title, Pageable pageable); // Updated for pagination and filtering
+    Page<JobDetail> getAll(String categoryId, String title, String userId, Pageable pageable); // Updated for pagination and filtering
 
     Page<JobDetail> getJobsByUserId(String username, Pageable pageable);
 
@@ -34,7 +35,7 @@ public interface JobService {
 
     ResponseMessage markJobAsUndone(String jobId, String username);
 
-    Page<JobDetail> getAppliedJobs(String username, Pageable pageable);
+    Page<JobApplicationApplied> getAppliedJobs(String username, Pageable pageable,String status);
 
     ResponseMessage testEmJob();
 

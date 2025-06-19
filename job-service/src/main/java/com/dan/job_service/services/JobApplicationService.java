@@ -30,6 +30,8 @@ public interface JobApplicationService {
     void deleteByJobId(String jobId);
 
     ResponseMessage delete(String id);
+
+     JobApplicationResponse getJobApplicationByJobId(String jobId, String username);
     
 
 }

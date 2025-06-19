@@ -187,6 +187,46 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements());
     }
 
+@Override
+public JobApplicationResponse getJobApplicationByJobId(String jobId, String username) {
+    String userId = identityServiceClient.getUserByUsername(username).getId();
+    Job job = jobRepository.findById(jobId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+
+    List<JobApplication> lstApplication = jobApplicationRepository.findByJobId(jobId);
+
+    JobApplication application = null;
+    UserProfileDetailResponse userProfile = null;
+    for (JobApplication jobApplication : lstApplication) {
+        logger.info("Compare: jobApplication.getUserId() = {}, userId = {}", jobApplication.getUserId(), userId);
+        if (userId != null && userId.equals(jobApplication.getUserId())) {
+            logger.info("Found userId: {}", jobApplication.getUserId());
+            application = jobApplication;
+            userProfile = profileServiceClient.getProfileByUserId(application.getUserId());
+            break;
+        }
+    }
+
+    // Thêm điều kiện nếu không tìm thấy
+    if (application == null) {
+        throw new RuntimeException("Không tìm thấy đơn ứng tuyển của người dùng này cho công việc này");
+    }
+
+    return JobApplicationResponse.builder()
+            .id(application.getId())
+            .userId(application.getUserId())
+            .jobId(application.getJobId())
+            .title(job.getTitle())
+            .userName(username)
+            .status(application.getStatus())
+            .offerSalary(application.getOfferSalary())
+            .offerPlan(application.getOfferPlan())
+            .offerSkill(application.getOfferSkill())
+            .appliedAt(application.getAppliedAt())
+            .updatedAt(application.getUpdatedAt())
+            .build();
+}
+
     @Override
 public Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String jobId, Pageable pageable) {
     jobRepository.findById(jobId)
@@ -244,6 +284,8 @@ public Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String
     public long countAppliedSuccess(String userId) {
         return jobApplicationRepository.countApprovedApplicationsByUserId(userId);
     }
+
+
 
     @Override
     public Object getJobApplicationDetail(String applicationId) {

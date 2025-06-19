@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dan.events.dtos.EventAddJobDataForRecommend;
 import com.dan.events.dtos.JobEvent;
 import com.dan.job_service.dtos.requets.JobRequest;
+import com.dan.job_service.dtos.responses.JobApplicationApplied;
 import com.dan.job_service.dtos.responses.JobDetail;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
@@ -330,21 +331,34 @@ public class JobServiceImpl implements JobService {
         }
     }
 
-    @Override
-    public Page<JobDetail> getAll(String categoryId, String title, Pageable pageable) {
-        try {
-            log.info("Lấy danh sách công việc với categoryId: {}, title: {}, pageable: {}", categoryId, title,
-                    pageable);
-            Page<Job> jobsPage;
+   @Override
+public Page<JobDetail> getAll(String categoryId, String title, String userId, Pageable pageable) {
+    try {
+        log.info("Lấy danh sách công việc với categoryId: {}, title: {}, userId: {}, pageable: {}", 
+                categoryId, title, userId, pageable);
+        Page<Job> jobsPage;
 
-            if (categoryId != null && !categoryId.isEmpty()) {
-                categoryRepository.findById(categoryId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
-            }
+        // Kiểm tra categoryId có tồn tại không
+        if (categoryId != null && !categoryId.isEmpty()) {
+            categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+        }
 
+        // Kết hợp các điều kiện lọc
+        if (userId != null && !userId.isEmpty()) {
             if (categoryId != null && !categoryId.isEmpty() && title != null && !title.isEmpty()) {
-                jobsPage = jobRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(categoryId, title,
-                        pageable);
+                jobsPage = jobRepository.findByUserIdAndCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(
+                        userId, categoryId, title, pageable);
+            } else if (categoryId != null && !categoryId.isEmpty()) {
+                jobsPage = jobRepository.findByUserIdAndCategoryIdAndActiveTrue(userId, categoryId, pageable);
+            } else if (title != null && !title.isEmpty()) {
+                jobsPage = jobRepository.findByUserIdAndTitleContainingIgnoreCaseAndActiveTrue(userId, title, pageable);
+            } else {
+                jobsPage = jobRepository.findJobsByUserIdAndActiveTrue(userId, pageable);
+            }
+        } else {
+            if (categoryId != null && !categoryId.isEmpty() && title != null && !title.isEmpty()) {
+                jobsPage = jobRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(categoryId, title, pageable);
             } else if (categoryId != null && !categoryId.isEmpty()) {
                 jobsPage = jobRepository.findByCategoryIdAndActiveTrue(categoryId, pageable);
             } else if (title != null && !title.isEmpty()) {
@@ -352,18 +366,19 @@ public class JobServiceImpl implements JobService {
             } else {
                 jobsPage = jobRepository.findByActiveTrue(pageable);
             }
-
-            List<JobDetail> jobDetails = jobsPage.getContent().stream()
-                    .map(this::fromJobToJobDetail)
-                    .collect(Collectors.toList());
-
-            log.info("Số lượng công việc tìm thấy: {}", jobsPage.getTotalElements());
-            return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
-        } catch (Exception e) {
-            log.error("Lỗi lấy danh sách công việc: {}", e.getMessage(), e);
-            throw e;
         }
+
+        List<JobDetail> jobDetails = jobsPage.getContent().stream()
+                .map(this::fromJobToJobDetail)
+                .collect(Collectors.toList());
+
+        log.info("Số lượng công việc tìm thấy: {}", jobsPage.getTotalElements());
+        return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
+    } catch (Exception e) {
+        log.error("Lỗi lấy danh sách công việc: {}", e.getMessage(), e);
+        throw e;
     }
+}
 
     @Override
     public Page<JobDetail> getJobsByUserId(String username, Pageable pageable) {
@@ -375,28 +390,45 @@ public class JobServiceImpl implements JobService {
         return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
     }
 
-    @Override
-    public Page<JobDetail> getAppliedJobs(String username, Pageable pageable) {
-        try {
-            UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
-            String userId = user.getId();
+@Override
+public Page<JobApplicationApplied> getAppliedJobs(String username, Pageable pageable, String status) {
+    try {
+        UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
+        String userId = user.getId();
 
-            Page<JobApplication> userApplications = jobApplicationRepository.findByUserId(userId, pageable);
-            List<JobDetail> appliedJobs = userApplications.getContent().stream()
-                    .map(application -> {
-                        Job job = jobRepository.findById(application.getJobId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công việc"));
-                        return fromJobToJobDetail(job);
-                    })
-                    .collect(Collectors.toList());
-
-            log.info("Found {} applied jobs for user {}", appliedJobs.size(), username);
-            return new PageImpl<>(appliedJobs, pageable, userApplications.getTotalElements());
-        } catch (Exception e) {
-            log.error("Error getting applied jobs for user {}: {}", username, e.getMessage(), e);
-            throw e;
+        Page<JobApplication> userApplications;
+        if (status != null && !status.isEmpty()) {
+            userApplications = jobApplicationRepository.findByUserIdAndStatus(userId, status, pageable);
+        } else {
+            userApplications = jobApplicationRepository.findByUserId(userId, pageable);
         }
+
+        List<JobApplicationApplied> appliedJobs = userApplications.getContent()
+            .stream()
+            .map(application -> {
+                Job job = jobRepository.findById(application.getJobId()).orElse(null);
+                if (job == null) return null;
+                return JobApplicationApplied.builder()
+                        .id(job.getId())
+                        .title(job.getTitle())
+                        .shortDescription(job.getShortDescription())
+                        .salaryMin(job.getSalaryMin())
+                        .salaryMax(job.getSalaryMax())
+                        .applicationDeadline(job.getApplicationDeadline())
+                        .done(job.getDone())
+                        .status(application.getStatus() != null ? application.getStatus().toString() : null)
+                        .build();
+            })
+            .filter(dto -> dto != null)
+            .collect(Collectors.toList());
+
+        return new PageImpl<>(appliedJobs, pageable, userApplications.getTotalElements());
+    } catch (Exception e) {
+        log.error("Error getting applied jobs for user {}: {}", username, e.getMessage(), e);
+        throw e;
     }
+}
+
 
     private JobDetail fromJobToJobDetail(Job job) {
         String userName = "Không xác định";

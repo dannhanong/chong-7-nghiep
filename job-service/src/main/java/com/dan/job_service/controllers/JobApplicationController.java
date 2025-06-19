@@ -77,6 +77,13 @@ public class JobApplicationController {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(jobApplicationService.getJobApplicationByJobId(jobId, username, pageable));
     }
+    @GetMapping("/private/application/{jobId}")
+    public ResponseEntity<JobApplicationResponse> getApplicationsById(
+            @PathVariable String jobId,
+            HttpServletRequest request) {
+        String username = jwtService.getUsernameFromRequest(request);
+        return ResponseEntity.ok(jobApplicationService.getJobApplicationByJobId(jobId,username));
+    }
 
     @GetMapping("/public/list-application/{jobId}")
     public ResponseEntity<Page<JobApplicationProfileResponse>> getPublicApplicationsById(
