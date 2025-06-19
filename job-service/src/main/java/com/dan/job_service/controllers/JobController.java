@@ -120,10 +120,12 @@ public class JobController {
             @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) String title,
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "") String userId,
+
             @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<JobDetail> jobsPage = jobService.getAll(categoryId, title, pageable);
+            Page<JobDetail> jobsPage = jobService.getAll(categoryId, title, userId, pageable);
             return ResponseEntity.ok(jobsPage);
         } catch (Exception e) {
             log.error("Lỗi lấy danh sách công việc (admin): {}", e.getMessage(), e);
@@ -137,6 +139,7 @@ public class JobController {
             @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) String title,
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "") String userId,
             @RequestParam(defaultValue = "10") int size) {
         try {
             if (page < 0 || size <= 0) {
@@ -147,8 +150,7 @@ public class JobController {
             log.info("Lấy danh sách công việc với categoryId: {}, title: {}, page: {}, size: {}", categoryId, title,
                     page, size);
             Pageable pageable = PageRequest.of(page, size);
-            Page<JobDetail> jobsPage = jobService.getAll(categoryId, title, pageable);
-            log.info("Số lượng công việc tìm thấy: {}", jobsPage.getTotalElements());
+            Page<JobDetail> jobsPage = jobService.getAll(categoryId, title, userId, pageable);
             if (jobsPage.isEmpty()) {
                 return ResponseEntity.ok(new ResponseMessage(200, "Không có công việc nào phù hợp"));
             }
@@ -185,12 +187,11 @@ public class JobController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "") String status)
 
-            
-             {
+    {
         try {
             String username = jwtService.getUsernameFromRequest(request);
             Pageable pageable = PageRequest.of(page, size);
-            Page<JobApplicationApplied> appliedJobsPage = jobService.getAppliedJobs(username, pageable,status);
+            Page<JobApplicationApplied> appliedJobsPage = jobService.getAppliedJobs(username, pageable, status);
 
             if (appliedJobsPage.isEmpty()) {
                 return ResponseEntity.ok(new ResponseMessage(200, "Bạn chưa ứng tuyển công việc nào"));

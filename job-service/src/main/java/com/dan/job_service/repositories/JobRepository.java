@@ -27,7 +27,8 @@ public interface JobRepository extends MongoRepository<Job, String> {
     // thêm phương thức để tìm kiếm công việc theo danh mục không truyền phân trang
     List<Job> findByCategoryIdAndActiveTrue(String categoryId);
 
-    // Thêm tổng số job mà người dùng đã làm hoàn thành
-
+Page<Job> findByUserIdAndCategoryIdAndActiveTrue(String userId, String categoryId, Pageable pageable);
+    Page<Job> findByUserIdAndTitleContainingIgnoreCaseAndActiveTrue(String userId, String title, Pageable pageable);
+    Page<Job> findByUserIdAndCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(String userId, String categoryId, String title, Pageable pageable);
 
 }

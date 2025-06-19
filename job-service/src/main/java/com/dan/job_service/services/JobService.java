@@ -23,7 +23,7 @@ public interface JobService {
 
     List<JobsLast24HoursResponse> getJobsPostedLast24Hours();
 
-    Page<JobDetail> getAll(String categoryId, String title, Pageable pageable); // Updated for pagination and filtering
+    Page<JobDetail> getAll(String categoryId, String title, String userId, Pageable pageable); // Updated for pagination and filtering
 
     Page<JobDetail> getJobsByUserId(String username, Pageable pageable);
 

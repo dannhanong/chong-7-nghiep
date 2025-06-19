@@ -331,21 +331,34 @@ public class JobServiceImpl implements JobService {
         }
     }
 
-    @Override
-    public Page<JobDetail> getAll(String categoryId, String title, Pageable pageable) {
-        try {
-            log.info("Lấy danh sách công việc với categoryId: {}, title: {}, pageable: {}", categoryId, title,
-                    pageable);
-            Page<Job> jobsPage;
+   @Override
+public Page<JobDetail> getAll(String categoryId, String title, String userId, Pageable pageable) {
+    try {
+        log.info("Lấy danh sách công việc với categoryId: {}, title: {}, userId: {}, pageable: {}", 
+                categoryId, title, userId, pageable);
+        Page<Job> jobsPage;
 
-            if (categoryId != null && !categoryId.isEmpty()) {
-                categoryRepository.findById(categoryId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
-            }
+        // Kiểm tra categoryId có tồn tại không
+        if (categoryId != null && !categoryId.isEmpty()) {
+            categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục"));
+        }
 
+        // Kết hợp các điều kiện lọc
+        if (userId != null && !userId.isEmpty()) {
             if (categoryId != null && !categoryId.isEmpty() && title != null && !title.isEmpty()) {
-                jobsPage = jobRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(categoryId, title,
-                        pageable);
+                jobsPage = jobRepository.findByUserIdAndCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(
+                        userId, categoryId, title, pageable);
+            } else if (categoryId != null && !categoryId.isEmpty()) {
+                jobsPage = jobRepository.findByUserIdAndCategoryIdAndActiveTrue(userId, categoryId, pageable);
+            } else if (title != null && !title.isEmpty()) {
+                jobsPage = jobRepository.findByUserIdAndTitleContainingIgnoreCaseAndActiveTrue(userId, title, pageable);
+            } else {
+                jobsPage = jobRepository.findJobsByUserIdAndActiveTrue(userId, pageable);
+            }
+        } else {
+            if (categoryId != null && !categoryId.isEmpty() && title != null && !title.isEmpty()) {
+                jobsPage = jobRepository.findByCategoryIdAndTitleContainingIgnoreCaseAndActiveTrue(categoryId, title, pageable);
             } else if (categoryId != null && !categoryId.isEmpty()) {
                 jobsPage = jobRepository.findByCategoryIdAndActiveTrue(categoryId, pageable);
             } else if (title != null && !title.isEmpty()) {
@@ -353,18 +366,19 @@ public class JobServiceImpl implements JobService {
             } else {
                 jobsPage = jobRepository.findByActiveTrue(pageable);
             }
-
-            List<JobDetail> jobDetails = jobsPage.getContent().stream()
-                    .map(this::fromJobToJobDetail)
-                    .collect(Collectors.toList());
-
-            log.info("Số lượng công việc tìm thấy: {}", jobsPage.getTotalElements());
-            return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
-        } catch (Exception e) {
-            log.error("Lỗi lấy danh sách công việc: {}", e.getMessage(), e);
-            throw e;
         }
+
+        List<JobDetail> jobDetails = jobsPage.getContent().stream()
+                .map(this::fromJobToJobDetail)
+                .collect(Collectors.toList());
+
+        log.info("Số lượng công việc tìm thấy: {}", jobsPage.getTotalElements());
+        return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
+    } catch (Exception e) {
+        log.error("Lỗi lấy danh sách công việc: {}", e.getMessage(), e);
+        throw e;
     }
+}
 
     @Override
     public Page<JobDetail> getJobsByUserId(String username, Pageable pageable) {
