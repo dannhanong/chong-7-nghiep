@@ -19,6 +19,7 @@ public class JobApplicationResponse {
     private String userId;
     private String jobId;
     private String name;
+    private String userName;
     private String title;
     private ApplicationStatus status;
     private long offerSalary;

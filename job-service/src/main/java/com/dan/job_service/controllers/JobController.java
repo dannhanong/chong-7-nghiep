@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.dan.job_service.dtos.requets.JobRequest;
+import com.dan.job_service.dtos.responses.JobApplicationApplied;
 import com.dan.job_service.dtos.responses.JobDetail;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.security.jwt.JwtService;
@@ -181,11 +182,15 @@ public class JobController {
     public ResponseEntity<?> getAppliedJobs(
             HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String status)
+
+            
+             {
         try {
             String username = jwtService.getUsernameFromRequest(request);
             Pageable pageable = PageRequest.of(page, size);
-            Page<JobDetail> appliedJobsPage = jobService.getAppliedJobs(username, pageable);
+            Page<JobApplicationApplied> appliedJobsPage = jobService.getAppliedJobs(username, pageable,status);
 
             if (appliedJobsPage.isEmpty()) {
                 return ResponseEntity.ok(new ResponseMessage(200, "Bạn chưa ứng tuyển công việc nào"));

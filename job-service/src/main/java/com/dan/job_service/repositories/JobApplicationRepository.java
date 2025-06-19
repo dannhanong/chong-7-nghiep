@@ -17,6 +17,7 @@ import com.dan.job_service.models.JobApplication;
 public interface JobApplicationRepository extends MongoRepository<JobApplication, String> {
     Page<JobApplication> findByUserId(String userId, Pageable pageable);
     Page<JobApplication> findByJobId(String jobId, Pageable pageable);
+
     Optional<JobApplication> findByUserIdAndJobId(String userId, String jobId);
     Page<JobApplication> findByUserIdAndStatus(String userId, ApplicationStatus status, Pageable pageable); // Phương thức mới
     @Query(value = "{'userId': ?0, 'status': 'APPROVED'}", count = true)
@@ -24,5 +25,6 @@ public interface JobApplicationRepository extends MongoRepository<JobApplication
     // Tìm kiếm đơn ứng tuyển theo jobId 
     List<JobApplication> findByJobId(String jobId);
     Integer countByUserIdAndStatus(String userId, ApplicationStatus status);
+    Page<JobApplication> findByUserIdAndStatus(String userId, String status, Pageable pageable);
 
 }

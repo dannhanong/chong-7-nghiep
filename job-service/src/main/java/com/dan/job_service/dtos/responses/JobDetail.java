@@ -21,7 +21,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
 public class JobDetail {
     String id;
-    String userName;
+String userName;
     String name;
     
     String categoryName; // Added field

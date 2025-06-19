@@ -3,6 +3,7 @@ package com.dan.job_service.services.impls;
 import com.dan.job_service.dtos.enums.JobStatus;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.http_clients.IdentityServiceClient;
+import com.dan.job_service.models.Job;
 import com.dan.job_service.models.JobProgress;
 import com.dan.job_service.repositories.JobProgressRepository;
 import com.dan.job_service.repositories.JobRepository;
@@ -32,10 +33,16 @@ public class JobProgressServiceImpl implements JobProgressService {
                     .status(JobStatus.valueOf(status))
                     .createdAt(LocalDateTime.now()).build();
             jobProgressRepository.save(newJobProgress);
-            return ResponseMessage.builder()
-                    .status(200)
-                    .message("Cập nhật tiến độ thành công")
-                    .build();
+            Job job = jobRepository.findById(jobId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc với id: " + jobId));
+            if(JobStatus.valueOf(status) == JobStatus.COMPLETED && JobStatus.valueOf(status) == JobStatus.CANCELED ){
+                job.setDone(true);
+                jobRepository.save(job);
+            }
+                return ResponseMessage.builder()
+                        .status(200)
+                        .message("Cập nhật tiến độ thành công")
+                        .build();
         } catch (Exception e) {
             throw new RuntimeException("Cập nhật tiến độ thất bại: " + e.getMessage());
         }
