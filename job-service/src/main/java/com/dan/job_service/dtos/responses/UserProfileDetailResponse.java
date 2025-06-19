@@ -12,6 +12,7 @@ import java.util.Date;
 @Builder
 public class UserProfileDetailResponse {
     private String name;
+    private String userName;
     private boolean enabled;
     private String email;
     private String roles;

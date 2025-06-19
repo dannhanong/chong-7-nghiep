@@ -166,6 +166,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                             .userId(application.getUserId())
                             .jobId(application.getJobId())
                             .name(userProfile.getName())
+                            .userName(userProfile.getUserName())
                             .title(job.getTitle())
                             .status(application.getStatus())
                             .offerSalary(application.getOfferSalary())
@@ -180,6 +181,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                             .phoneNumber(userProfile.getPhoneNumber())
                             .avatarId(userProfile.getAvatarId())
                             .countApplied(countApplied)
+                            
                             .build();
                 })
                 .collect(Collectors.toList());
