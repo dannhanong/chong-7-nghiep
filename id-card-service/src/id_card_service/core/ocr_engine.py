@@ -52,7 +52,6 @@ class OCREngine:
         if not number.isdigit() or len(number) != 12:
             return False
             
-        # Kiểm tra prefix hợp lệ (đầu số tỉnh/thành phố)
         valid_prefixes = [
             '001', '002', '004', '006', '008', 
             '010', '011', '012', '014', '015',
@@ -177,7 +176,7 @@ class OCREngine:
         try:
             other_info = json.loads(response_data)
 
-            if other_info['full_name'] == "Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam":
+            if other_info['full_name'] == "Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam".lower():
                 other_info['full_name'] = ""
             return other_info
         except ValueError:

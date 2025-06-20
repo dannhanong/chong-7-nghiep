@@ -56,10 +56,13 @@ class KafkaEventConsumer:
     def _update_job_embedding(self, job_id, job_data):
         """Update embedding for a single job"""
         try:
+            description = job_data.get('description', '')
+            clean_description = self._clean_html_content(description)
+            
             # Tạo content
             content = ' '.join([
                 f"Tiêu đề: {job_data.get('title', '')}",
-                f"Mô tả: {job_data.get('description', '')}",
+                f"Mô tả: {clean_description}",
                 f"Yêu cầu: {job_data.get('requirements', '')}",
                 f"Kỹ năng: {job_data.get('skills', '')}",
                 f"Kinh nghiệm: {job_data.get('experienceLevel', '')}"
@@ -92,7 +95,47 @@ class KafkaEventConsumer:
             
         except Exception as e:
             logger.error(f"Error updating job embedding: {e}")
+
+    def _clean_html_content(self, html_content):
+        """Clean HTML content to plain text"""
+        if not html_content:
+            return ""
+
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            for script_or_style in soup(['script', 'style']):
+                script_or_style.decompose()
+
+            text = soup.get_text()
+
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            text = ' '.join(chunk for chunk in chunks if chunk)
+
+            return text
+        except ImportError:
+            import re
+            text = re.sub(r'<[^>]+>', ' ', html_content)
+
+            text = re.sub(r'&nbsp;', ' ', text)
+            text = re.sub(r'&amp;', '&', text)
+            text = re.sub(r'&lt;', '<', text)
+            text = re.sub(r'&gt;', '>', text)
+            text = re.sub(r'&quot;', '"', text)
+            text = re.sub(r'&#39;', "'", text)
             
+            # Chuẩn hóa khoảng trắng
+            text = re.sub(r'\s+', ' ', text).strip()
+            
+            return text
+        
+        except Exception as e:
+            logger.warning(f"Error cleaning HTML content: {e}")
+            # Trả về văn bản gốc nếu xảy ra lỗi
+            return html_content
+
     def _delete_job_embedding(self, job_id):
         """Delete embedding for a job"""
         try:
