@@ -50,6 +50,16 @@ class Settings(BaseSettings):
     # OpenAI API settings
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
 
+    # MongoDB settings
+    MONGO_HOST: str = os.getenv("MONGO_HOST", "localhost")
+    MONGO_PORT: int = int(os.getenv("MONGO_PORT", "27017"))
+    MONGO_USER: str = os.getenv("MONGO_USER", "root")
+    MONGO_PASS: str = os.getenv("MONGO_PASS", "")
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://root:123456@103.216.117.244:27017")
+    MONGODB_USER_DATABASE: str = os.getenv("MONGODB_USER_DATABASE", "links_auth")
+    MONGODB_USERS_COLLECTION: str = os.getenv("MONGODB_USERS_COLLECTION", "users")
+    MONGODB_IDENTITY_CARDS_COLLECTION: str = os.getenv("MONGODB_IDENTITY_CARDS_COLLECTION", "identity_cards")
+
     # Eureka Settings
     EUREKA_SERVER_URL: str = os.getenv("EUREKA_SERVER_URL", "http://localhost:9999/eureka")
     EUREKA_APP_NAME: str = os.getenv("EUREKA_APP_NAME", "id-card-service")
@@ -58,7 +68,15 @@ class Settings(BaseSettings):
     EUREKA_HEARTBEAT_INTERVAL: int = int(os.getenv("EUREKA_HEARTBEAT_INTERVAL", 30))
     EUREKA_RENEWAL_INTERVAL: int = int(os.getenv("EUREKA_RENEWAL_INTERVAL", 30))
     EUREKA_INSTANCE_ID: str = os.getenv("EUREKA_INSTANCE_ID", f"{EUREKA_APP_NAME}:{uuid.uuid4()}")
-    
+
+    # Other settings
+    BASE_API_URL: str = os.getenv("BASE_API_URL", "http://localhost:8000")
+
+    # JWT Settings
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "conghoaxahoichunghiavietnam/doclaptudohanhphuc/1975/1945")
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    JWT_EXPIRATION_MINUTES: int = int(os.getenv("JWT_EXPIRATION_MINUTES", "60"))
+
     class Config:
         env_file = ".env"
         case_sensitive = True

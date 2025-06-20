@@ -163,3 +163,5 @@ cython_debug/
 rec_list.txt
 test.py
 data.py
+
+data/
