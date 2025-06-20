@@ -44,5 +44,6 @@ String userName;
     WorkingForm workingForm;
     String file;
     List<String> otherFiles;
+    List<String> tags;
     Integer sumJob;
 }

@@ -29,6 +29,7 @@ public record JobRequest(
     WorkingType workingType,
     MultipartFile file,
     List<MultipartFile> otherFiles,
+    List<String> tags,
     Boolean status,
     Boolean active,
     Boolean done
