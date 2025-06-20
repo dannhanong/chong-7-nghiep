@@ -16,6 +16,7 @@ public class UserProfileDetail {
      String profileId;
      String userId;
     String name;
+    String userName;
     boolean enabled;
     String email;
     String roles;

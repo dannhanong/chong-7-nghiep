@@ -78,4 +78,6 @@ public class Job {
     String contentUri;
     String mainImageCode;
     List<String> otherImageCodes;
+    List<String> tags;
+    
 }

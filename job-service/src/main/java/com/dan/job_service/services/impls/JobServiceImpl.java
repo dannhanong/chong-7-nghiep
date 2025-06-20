@@ -95,6 +95,7 @@ public class JobServiceImpl implements JobService {
                     .status(false)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
+                    .tags(jobRequest.tags() != null ? jobRequest.tags() : List.of()) // Thêm trường tags
                     .workingType(jobRequest.workingType())
                     .workingForm(jobRequest.workingForm())
                     .build();
@@ -172,7 +173,9 @@ public class JobServiceImpl implements JobService {
             existingJob.setWorkingForm(jobRequest.workingForm());
             existingJob.setStatus(jobRequest.status() != null ? jobRequest.status() : existingJob.getStatus());
             existingJob.setActive(jobRequest.active() != null ? jobRequest.active() : existingJob.getActive());
+             existingJob.setTags(jobRequest.tags() != null ? jobRequest.tags() : existingJob.getTags());
             existingJob.setDone(jobRequest.done() != null ? jobRequest.done() : existingJob.getDone());
+        
 
             MultipartFile file = jobRequest.file();
             if (file != null && !file.isEmpty()) {
@@ -238,6 +241,7 @@ public class JobServiceImpl implements JobService {
             existingJob.setWorkingForm(jobRequest.workingForm());
             existingJob.setActive(jobRequest.active() != null ? jobRequest.active() : existingJob.getActive());
             existingJob.setDone(jobRequest.done() != null ? jobRequest.done() : existingJob.getDone());
+            existingJob.setTags(jobRequest.tags() != null ? jobRequest.tags() : existingJob.getTags());
             jobRepository.save(existingJob);
 
             return new ResponseMessage(200, "Cập nhật công việc thành công");
@@ -387,6 +391,7 @@ public Page<JobDetail> getAll(String categoryId, String title, String userId, Pa
         List<JobDetail> jobDetails = jobsPage.getContent().stream()
                 .map(this::fromJobToJobDetail)
                 .collect(Collectors.toList());
+
         return new PageImpl<>(jobDetails, pageable, jobsPage.getTotalElements());
     }
 
@@ -487,7 +492,7 @@ public Page<JobApplicationApplied> getAppliedJobs(String username, Pageable page
                 .active(job.getActive())
                 .file(job.getFile())
                 .otherFiles(job.getOtherImageCodes()) // <-- DÒNG MÃ ĐÃ ĐƯỢC THÊM VÀO
-
+                .tags(job.getTags()) // Thêm trường tags
                 .createdAt(dateFormatter.formatDate(job.getCreatedAt()))
                 .updatedAt(dateFormatter.formatDate(job.getUpdatedAt()))
                 .contentUri(job.getContentUri())
