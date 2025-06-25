@@ -269,6 +269,7 @@ public Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String
                         .appliedAt(application.getAppliedAt())
                         .offerPlan(application.getOfferPlan())
                         .offerSkill(application.getOfferSkill())
+                        .offerSalary(application.getOfferSalary())
                         .totalCountJobDone(totalCountJobDone)
                         .build();
             })
@@ -276,6 +277,8 @@ public Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String
 
     // Lưu ý: Tổng số phần tử trả về có thể khác với tổng số phần tử ban đầu
     // sau khi đã lọc. Chúng ta sẽ tạo Page mới với số lượng thực tế.
+
+    logger.info("Total elements after filtering: {}", responseList);
     return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements()); 
     // Nếu bạn muốn totalElements phản ánh số lượng sau khi lọc, bạn cần 
     // một truy vấn khác để đếm số lượng userId duy nhất.
