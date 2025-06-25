@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Recognition - Batch Processing</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .preview { border: 1px solid #ccc; padding: 10px; }
+        .video-container { position: relative; }
+        .countdown { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; 
+                    padding: 5px 10px; border-radius: 20px; font-weight: bold; }
+        .progress { width: 100%; margin-top: 10px; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px; cursor: pointer; margin: 5px; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; }
+        .thumbnail-container { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+        .thumbnail { width: 80px; height: 60px; object-fit: cover; border: 1px solid #ddd; }
+        .thumbnail.selected { border: 2px solid #4CAF50; }
+        .quality-indicator { width: 10px; height: 10px; border-radius: 50%; position: absolute; top: 3px; right: 3px; }
+        .quality-good { background-color: #4CAF50; }
+        .quality-medium { background-color: #FFC107; }
+        .quality-poor { background-color: #F44336; }
+        .thumbnail-wrapper { position: relative; }
+        #capturedImagesCount { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Face Recognition - Batch Processing</h1>
+    <div id="status">Ready to capture images.</div>
+    
+    <div class="container">
+        <div>
+            <div class="video-container">
+                <video id="video" width="320" height="240" autoplay></video>
+                <div id="countdown" class="countdown" style="display: none;">Ready</div>
+            </div>
+            <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+            <div>
+                <button id="startBtn">Start Camera</button>
+                <button id="captureBtn" disabled>Capture Batch</button>
+                <button id="recognizeBtn" type="button" disabled>Recognize</button>
+                <button id="resetBtn" disabled>Reset</button>
+            </div>
+            <div>
+                <p>Captured Images: <span id="capturedImagesCount">0</span>/10</p>
+                <progress id="captureProgress" value="0" max="10" class="progress"></progress>
+            </div>
+        </div>
+        
+        <div class="preview">
+            <h3>Captured Faces</h3>
+            <div id="thumbnailContainer" class="thumbnail-container"></div>
+        </div>
+    </div>
+    
+    <div id="result" style="display: none;">
+        <h3>Recognition Result</h3>
+        <div id="resultDetails"></div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const recognizeBtn = document.getElementById('recognizeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const status = document.getElementById('status');
+        const countdown = document.getElementById('countdown');
+        const thumbnailContainer = document.getElementById('thumbnailContainer');
+        const capturedImagesCount = document.getElementById('capturedImagesCount');
+        const captureProgress = document.getElementById('captureProgress');
+        const result = document.getElementById('result');
+        const resultDetails = document.getElementById('resultDetails');
+        
+        // Variables
+        let stream = null;
+        let capturedImages = [];
+        let isCapturing = false;
+        let captureInterval = null;
+        let countdownInterval = null;
+        const MAX_IMAGES = 10;
+        const CAPTURE_INTERVAL = 300; // 300ms between captures
+        const CAPTURE_DURATION = 3000; // 3 seconds total
+        const userId = "6846a2e2feee9c18d69f5689"; // Default user ID
+        
+        // Start webcam
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 640,
+                        height: 480,
+                        frameRate: { ideal: 30 }
+                    } 
+                });
+                video.srcObject = stream;
+                captureBtn.disabled = false;
+                startBtn.disabled = true;
+                status.textContent = "Camera started. Ready to capture images.";
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                status.textContent = `Webcam error: ${err.message}`;
+            }
+        }
+        
+        // Check image quality (simplified version)
+        function checkImageQuality(imageData) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.onload = function() {
+                    // Create canvas for analysis
+                    const analyzeCanvas = document.createElement('canvas');
+                    const ctx = analyzeCanvas.getContext('2d');
+                    analyzeCanvas.width = img.width;
+                    analyzeCanvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Get image data for analysis
+                    const imgData = ctx.getImageData(0, 0, analyzeCanvas.width, analyzeCanvas.height);
+                    const data = imgData.data;
+                    
+                    // Calculate brightness
+                    let brightness = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        brightness += (0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2]);
+                    }
+                    brightness = brightness / (data.length / 4);
+                    
+                    // Calculate blur score (simplified)
+                    let blurScore = 0;
+                    for (let y = 1; y < analyzeCanvas.height - 1; y += 10) { // Sample every 10 pixels for speed
+                        for (let x = 1; x < analyzeCanvas.width - 1; x += 10) {
+                            const idx = (y * analyzeCanvas.width + x) * 4;
+                            const prevIdx = ((y-1) * analyzeCanvas.width + x) * 4;
+                            
+                            const diff = Math.abs(data[idx] - data[prevIdx]) + 
+                                         Math.abs(data[idx+1] - data[prevIdx+1]) + 
+                                         Math.abs(data[idx+2] - data[prevIdx+2]);
+                            blurScore += diff;
+                        }
+                    }
+                    blurScore = blurScore / ((analyzeCanvas.width/10) * (analyzeCanvas.height/10));
+                    
+                    // Determine quality level
+                    let qualityLevel = "poor";
+                    if (brightness > 40 && brightness < 220 && blurScore > 10) {
+                        qualityLevel = "good";
+                    } else if (brightness > 30 && brightness < 240 && blurScore > 5) {
+                        qualityLevel = "medium";
+                    }
+                    
+                    resolve({
+                        brightness,
+                        blurScore,
+                        qualityLevel
+                    });
+                };
+                img.src = imageData;
+            });
+        }
+        
+        // Start batch capture
+        function startBatchCapture() {
+            if (!stream) return;
+            
+            // Reset previous captures
+            capturedImages = [];
+            thumbnailContainer.innerHTML = '';
+            capturedImagesCount.textContent = '0';
+            captureProgress.value = 0;
+            
+            // Disable buttons during capture
+            captureBtn.disabled = true;
+            recognizeBtn.disabled = true;
+            resetBtn.disabled = true;
+            
+            // Show countdown
+            countdown.style.display = 'block';
+            let secondsLeft = Math.ceil(CAPTURE_DURATION / 1000);
+            countdown.textContent = `${secondsLeft}s`;
+            
+            countdownInterval = setInterval(() => {
+                secondsLeft--;
+                countdown.textContent = `${secondsLeft}s`;
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+            
+            isCapturing = true;
+            status.textContent = "Capturing images...";
+            
+            // Capture frames at intervals
+            captureInterval = setInterval(async () => {
+                if (capturedImages.length >= MAX_IMAGES) {
+                    stopBatchCapture();
+                    return;
+                }
+                
+                // Capture frame
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Check quality
+                const quality = await checkImageQuality(imageData);
+                
+                // Store image with quality info
+                capturedImages.push({
+                    data: imageData,
+                    base64: imageData.split(',')[1],
+                    quality: quality.qualityLevel,
+                    timestamp: Date.now()
+                });
+                
+                // Update UI
+                addThumbnail(imageData, capturedImages.length - 1, quality.qualityLevel);
+                capturedImagesCount.textContent = capturedImages.length;
+                captureProgress.value = capturedImages.length;
+                
+                // If we reached the max, stop capturing
+                if (capturedImages.length >= MAX_IMAGES) {
+                    stopBatchCapture();
+                }
+            }, CAPTURE_INTERVAL);
+            
+            // Set timeout to stop capturing after CAPTURE_DURATION
+            setTimeout(() => {
+                if (isCapturing) {
+                    stopBatchCapture();
+                }
+            }, CAPTURE_DURATION);
+        }
+        
+        // Stop batch capture
+        function stopBatchCapture() {
+            isCapturing = false;
+            clearInterval(captureInterval);
+            clearInterval(countdownInterval);
+            countdown.style.display = 'none';
+            
+            // Enable buttons
+            captureBtn.disabled = false;
+            if (capturedImages.length > 0) {
+                recognizeBtn.disabled = false;
+            }
+            resetBtn.disabled = false;
+            
+            status.textContent = `Captured ${capturedImages.length} images. Ready for recognition.`;
+        }
+        
+        // Add thumbnail to UI
+        function addThumbnail(imageData, index, quality) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'thumbnail-wrapper';
+            
+            const img = document.createElement('img');
+            img.src = imageData;
+            img.className = 'thumbnail';
+            img.dataset.index = index;
+            
+            const indicator = document.createElement('div');
+            indicator.className = `quality-indicator quality-${quality}`;
+            
+            wrapper.appendChild(img);
+            wrapper.appendChild(indicator);
+            thumbnailContainer.appendChild(wrapper);
+            
+            img.addEventListener('click', () => {
+                img.classList.toggle('selected');
+            });
+        }
+        
+        // Recognize faces from captured images
+        async function recognizeFaces() {
+            // Filter out poor quality images
+            const goodImages = capturedImages.filter(img => img.quality !== "poor");
+            
+            if (goodImages.length === 0) {
+                status.textContent = "No good quality images captured. Try again.";
+                return;
+            }
+            
+            status.textContent = "Processing images and recognizing faces...";
+            recognizeBtn.disabled = true;
+            
+            try {
+                // Send all good images to server
+                const response = await fetch('/api/batch-recognize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        images: goodImages.map(img => img.base64),
+                        user_id: userId,
+                        specific_mode: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Display results
+                displayResults(data);
+                
+                status.textContent = "Recognition completed.";
+                
+            } catch (error) {
+                console.error("Recognition error:", error);
+                status.textContent = `Recognition error: ${error.message}`;
+            } finally {
+                recognizeBtn.disabled = false;
+            }
+        }
+        
+        // Display recognition results
+        function displayResults(data) {
+            result.style.display = 'block';
+            
+            if (data.error) {
+                resultDetails.innerHTML = `<p style="color: red">Error: ${data.error}</p>`;
+                return;
+            }
+            
+            if (data.recognized) {
+                resultDetails.innerHTML = `
+                    <p style="color: green; font-size: 18px;">✓ Face recognized!</p>
+                    <p><strong>User ID:</strong> ${data.user_id}</p>
+                    <p><strong>Name:</strong> ${data.name || 'Unknown'}</p>
+                    <p><strong>Average Confidence:</strong> ${data.average_confidence.toFixed(2)}%</p>
+                    <p><strong>Average Distance:</strong> ${data.average_distance.toFixed(4)}</p>
+                    <p><strong>Images Processed:</strong> ${data.processed_images} / ${data.total_images}</p>
+                `;
+                
+                // Display individual results if available
+                if (data.individual_results && data.individual_results.length > 0) {
+                    let individualHtml = '<h4>Individual Image Results:</h4><ul>';
+                    data.individual_results.forEach((result, index) => {
+                        individualHtml += `
+                            <li>Image #${index+1}: 
+                                ${result.recognized ? 
+                                    `Recognized (Confidence: ${result.confidence.toFixed(2)}%)` : 
+                                    'Not recognized'}
+                            </li>`;
+                    });
+                    individualHtml += '</ul>';
+                    resultDetails.innerHTML += individualHtml;
+                }
+            } else {
+                resultDetails.innerHTML = `
+                    <p style="color: red; font-size: 18px;">✗ Face not recognized</p>
+                    <p>${data.message || 'The face does not match the specified user.'}</p>
+                    <p><strong>Images Processed:</strong> ${data.processed_images} / ${data.total_images}</p>
+                `;
+            }
+        }
+        
+        // Reset everything
+        function resetCapture() {
+            capturedImages = [];
+            thumbnailContainer.innerHTML = '';
+            capturedImagesCount.textContent = '0';
+            captureProgress.value = 0;
+            result.style.display = 'none';
+            
+            captureBtn.disabled = false;
+            recognizeBtn.disabled = true;
+            
+            status.textContent = "Reset completed. Ready to capture new images.";
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', startCamera);
+        captureBtn.addEventListener('click', startBatchCapture);
+        recognizeBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            await recognizeFaces();
+        });
+        resetBtn.addEventListener('click', resetCapture);
+    </script>
+</body>
+</html>

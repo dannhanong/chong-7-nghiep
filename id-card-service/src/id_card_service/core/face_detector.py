@@ -99,14 +99,3 @@ class FaceDetector:
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         gray = clahe.apply(gray)
         return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-            
-    def draw_face_rectangles(self, frame: np.ndarray, face_locations: List[Tuple[int, int, int, int]]) -> np.ndarray:
-        """Draw rectangles around detected faces"""
-        frame_copy = frame.copy()
-
-        if not face_locations:
-            return frame_copy
-
-        for (top, right, bottom, left) in face_locations:
-            cv2.rectangle(frame_copy, (left, top), (right, bottom), (0, 255, 0), 2)
-        return frame_copy

@@ -21,10 +21,11 @@ from ..config.settings import settings
 from ..core.face_recognizer import FaceRecognizer
 from ..core.face_detector import FaceDetector
 from ..core.auth.jwt_service import jwt_service
+from ..core.ocr_engine import get_ocr_engine
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-
+ocr_engine = get_ocr_engine()
 
 class IDCardNumberInfo(BaseModel):
     """Information about extracted ID card number."""
@@ -33,6 +34,7 @@ class IDCardNumberInfo(BaseModel):
 
 class OtherTextInfo(BaseModel):
     """Information about other extracted text."""
+    number: str = None
     full_name: str = None
     dob: str = None
     sex: str = None
@@ -46,9 +48,6 @@ class OCRResponse(BaseModel):
     success: bool
     id_card_number: IDCardNumberInfo = None
     other_info: OtherTextInfo = None
-    processing_time: float = 0.0
-    image_info: Dict[str, Any] = {}
-    error: str = None
 
 def get_current_username(request: Request) -> Optional[str]:
     return jwt_service.get_username_from_request(request)
@@ -73,21 +72,25 @@ async def validate_file(file: UploadFile) -> bytes:
     
     return content
 
-
 @router.post(
     "/extract",
-    response_model=OCRResponse,
     summary="Extract Text from CCCD",
     description="Upload a CCCD image and extract all text using OCR"
 )
 async def extract_text(
+    request: Request,
     file: UploadFile = File(..., description="CCCD image file (JPG, PNG, PDF)"),
     min_confidence: float = Form(0.5, description="Minimum confidence threshold")
 ):
-    """Extract raw text from CCCD image."""
-    start_time = time.time()
-    
+    """Extract raw text from CCCD image."""    
     try:
+        username = get_current_username(request)
+        if not username:
+            raise HTTPException(
+                status_code=401,
+                detail="Vui lòng đăng nhập để sử dụng dịch vụ này."
+            )
+
         # Validate and read file
         image_data = await validate_file(file)
         
@@ -97,40 +100,53 @@ async def extract_text(
             pil_image = pil_image.convert('RGB')
         processed_image = np.array(pil_image)
         
-        image_info = {
-            'original_size': processed_image.shape[:2],
-            'final_size': processed_image.shape[:2],
-            'operations_applied': ['format_conversion'],
-            'rotation_angle': 0.0
-        }
-                    
-        # Get OCR model and extract text
-        ocr_model = model_manager.get_model({
-            'lang': settings.OCR_LANG
-        })
-        
-        ocr_result = ocr_model.extract_text(processed_image, min_confidence)
-        
-        # Return simple OCR response
-        processing_time = time.time() - start_time
-        
-        return OCRResponse(
+        ocr_result = ocr_engine.extract_text(processed_image, min_confidence)
+
+        print(f"OCR result: {ocr_result}")
+
+        if (
+            not ocr_result.get("success")
+            or not ocr_result.get("id_card_number")
+            or not ocr_result["id_card_number"].get("number")
+            or not ocr_result["id_card_number"].get("confidence")
+            or not ocr_result.get("other_info")
+            or not ocr_result["other_info"].get("full_name")
+            or not ocr_result["other_info"].get("dob")
+            or not ocr_result["other_info"].get("sex")
+            or not ocr_result["other_info"].get("nationality")
+            or not ocr_result["other_info"].get("origin")
+            or not ocr_result["other_info"].get("residence")
+            or not ocr_result["other_info"].get("expiry_date")
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Lấy thông tin từ CCCD không thành công. Vui lòng kiểm tra lại."
+            )
+                
+        return OtherTextInfo(
             success=True,
-            id_card_number=IDCardNumberInfo(
-                number=ocr_result['id_card_number']['number'],
-                confidence=ocr_result['id_card_number']['confidence']
-            ),
-            other_info=OtherTextInfo(
-                full_name=ocr_result['other_info']['full_name'],
-                dob=ocr_result['other_info']['dob'],
-                sex=ocr_result['other_info']['sex'],
-                nationality=ocr_result['other_info']['nationality'],
-                origin=ocr_result['other_info']['origin'],
-                residence=ocr_result['other_info']['residence'],
-                expiry_date=ocr_result['other_info']['expiry_date']
-            ),
-            processing_time=processing_time,
-            image_info=image_info
+            # id_card_number=IDCardNumberInfo(
+            #     number=ocr_result['id_card_number']['number'],
+            #     confidence=ocr_result['id_card_number']['confidence']
+            # ),
+            # other_info=OtherTextInfo(
+            #     number=ocr_result['id_card_number'].get('number', ''),
+            #     full_name=ocr_result['other_info']['full_name'],
+            #     dob=ocr_result['other_info']['dob'],
+            #     sex=ocr_result['other_info']['sex'],
+            #     nationality=ocr_result['other_info']['nationality'],
+            #     origin=ocr_result['other_info']['origin'],
+            #     residence=ocr_result['other_info']['residence'],
+            #     expiry_date=ocr_result['other_info']['expiry_date']
+            # )
+            number=ocr_result['id_card_number'].get('number', ''),
+            full_name=ocr_result['other_info']['full_name'],
+            dob=ocr_result['other_info']['dob'],
+            sex=ocr_result['other_info']['sex'],
+            nationality=ocr_result['other_info']['nationality'],
+            origin=ocr_result['other_info']['origin'],
+            residence=ocr_result['other_info']['residence'],
+            expiry_date=ocr_result['other_info']['expiry_date']
         )
         
     except HTTPException:
@@ -231,7 +247,7 @@ def get_recognizer():
     return recognizer
 
 @router.post(
-    "/batch-recognize",
+    "/verify-face",
     response_model=dict,
     summary="Batch Face Recognition",
     description="Recognize faces in multiple images and return aggregated results"

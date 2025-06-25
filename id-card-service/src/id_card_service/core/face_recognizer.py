@@ -97,10 +97,10 @@ class FaceRecognizer():
             person_id = user_id
             
             # Kiểm tra xem person đã tồn tại chưa
-            if self._person_exists(person_id):
-                result["message"] = f"Người dùng với ID {person_id} đã được đăng ký face rồi"
-                result["person_id"] = person_id
-                return result
+            # if self._person_exists(person_id):
+            #     result["message"] = f"Người dùng với ID {person_id} đã được đăng ký face rồi"
+            #     result["person_id"] = person_id
+            #     return result
             
             # 6. Tạo thư mục cho person và lưu ảnh gương mặt
             person_dir = os.path.join(self.known_faces_dir, person_id)

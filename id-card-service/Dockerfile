@@ -2,6 +2,8 @@ FROM python:3.12.4-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
+ARG PYTHONPATH=""
+ENV PYTHONPATH=/app/src:${PYTHONPATH}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
@@ -19,6 +21,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
+
+RUN pip install -e .
 
 EXPOSE 5001
 

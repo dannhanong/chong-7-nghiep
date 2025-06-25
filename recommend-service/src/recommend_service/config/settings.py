@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://root:123456@103.216.117.244:27017")
     MONGODB_JOB_DATABASE: str = os.getenv("MONGODB_JOB_DATABASE", "jobs_job")
     MONGODB_JOBS_COLLECTION: str = os.getenv("MONGODB_JOBS_COLLECTION", "jobs")
+    MONGODB_CATEGORIES_COLLECTION: str = os.getenv("MONGODB_CATEGORIES_COLLECTION", "categories")
     MONGODB_JOB_EMBEDDINGS_COLLECTION: str = os.getenv("MONGODB_JOB_EMBEDDINGS_COLLECTION", "job_embeddings")
     MONGODB_PROFILE_EMBEDDINGS_COLLECTION: str = os.getenv("MONGODB_PROFILE_EMBEDDINGS_COLLECTION", "profile_embeddings")
     MONGODB_USER_DATABASE: str = os.getenv("MONGODB_USER_DATABASE", "links_auth")
@@ -46,6 +47,9 @@ class Settings(BaseSettings):
     # Cài đặt cho Redis
     REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
+
+    # Cài đặt cho OpenAI
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "your-openai-api-key")
 
     # Cài đặt cho Kafka
     KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9094")

@@ -9,71 +9,51 @@ import py_eureka_client.eureka_client as eureka_client
 
 from id_card_service.api.router import router
 from id_card_service.config.settings import settings
-from id_card_service.core.model_manager import model_manager
+from id_card_service.core.kafka.kafka_consumer import KafkaEventConsumer
 
-# Configure logging
-# logging.basicConfig(
-#     level=getattr(logging, settings.LOG_LEVEL),
-#     format=settings.LOG_FORMAT
-# )
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     """Application lifespan events."""
-#     # Startup
-#     logger.info(f"Starting {settings.APP_NAME} v{settings.VERSION}")
-    
-#     # Preload OCR model if configured
-#     if settings.PRELOAD_MODEL:
-#         try:
-#             logger.info("Preloading OCR model...")
-#             await asyncio.get_event_loop().run_in_executor(
-#                 None, model_manager.preload_default_model
-#             )
-#             logger.info("OCR model preloaded successfully")
-#         except Exception as e:
-#             logger.warning(f"Failed to preload OCR model: {str(e)}")
-    
-#     yield
-    
-#     # Shutdown
-#     logger.info("Shutting down application...")
-#     model_manager.clear_cache()
-#     logger.info("Application shutdown complete")
-
-
 app = FastAPI(
-    title=settings.API_TITLE,
-    description=settings.API_DESCRIPTION,
-    version=settings.API_VERSION,
-    # lifespan=lifespan,
-    docs_url="/docs" if settings.DEBUG else None,
-    redoc_url="/redoc" if settings.DEBUG else None,
+    title="ID Card Service",
+    description="",
+    version="0.1.0"
 )
+
+kafka_consumer = None
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
-app.include_router(router, prefix="/id", tags=["CCCD Processing"])
+app.include_router(router, prefix="/id")
 
-@app.get("/health", tags=["Health"])
-async def health_check():
-    """Basic health check endpoint."""
-    return {"status": "healthy", "service": settings.APP_NAME, "version": settings.VERSION}
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
 @app.on_event("startup")
 async def startup_event():
+    global kafka_consumer
+
     """Khi ứng dụng khởi động, đăng ký với Eureka"""
+    # Khởi tạo Kafka consumer
     try:
+        logger.info("Starting Kafka consumer...")
+        kafka_consumer = KafkaEventConsumer()
+        kafka_consumer.start()
+        logger.info("Kafka consumer started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start Kafka consumer: {str(e)}")
+
+    try:
+        logger.info("Registering service with Eureka...")
         await eureka_client.init_async(
             eureka_server=settings.EUREKA_SERVER_URL,
             app_name=settings.EUREKA_APP_NAME,
@@ -87,10 +67,8 @@ async def startup_event():
 
 if __name__ == "__main__":
     uvicorn.run(
-        "id_card_service.main:app",
+        "main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.DEBUG,
-        workers=1 if settings.DEBUG else settings.MAX_WORKERS,
-        log_level=settings.LOG_LEVEL.lower()
+        reload=settings.DEBUG
     )

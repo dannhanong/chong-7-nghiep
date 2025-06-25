@@ -160,8 +160,6 @@ public class JobServiceImpl implements JobService {
 
             existingJob.setCategoryId(category.getId());
             existingJob.setTitle(jobRequest.title());
-            existingJob.setShortDescription(jobRequest.shortDescription());
-            existingJob.setDescription(jobRequest.description());
             existingJob.setSalaryMin(jobRequest.salaryMin());
             existingJob.setSalaryMax(jobRequest.salaryMax());
             existingJob.setExperienceLevel(jobRequest.experienceLevel());
@@ -173,9 +171,17 @@ public class JobServiceImpl implements JobService {
             existingJob.setWorkingForm(jobRequest.workingForm());
             existingJob.setStatus(jobRequest.status() != null ? jobRequest.status() : existingJob.getStatus());
             existingJob.setActive(jobRequest.active() != null ? jobRequest.active() : existingJob.getActive());
-             existingJob.setTags(jobRequest.tags() != null ? jobRequest.tags() : existingJob.getTags());
+            existingJob.setTags(jobRequest.tags() != null ? jobRequest.tags() : existingJob.getTags());
             existingJob.setDone(jobRequest.done() != null ? jobRequest.done() : existingJob.getDone());
-        
+            
+            boolean descriptionChanged = !jobRequest.description().equals(existingJob.getDescription()) && 
+                jobRequest.description() != null && 
+                !jobRequest.description().isEmpty();
+            if (descriptionChanged) {
+                existingJob.setDescription(jobRequest.description());
+            } else {
+                existingJob.setDescription(existingJob.getDescription());
+            }
 
             MultipartFile file = jobRequest.file();
             if (file != null && !file.isEmpty()) {
@@ -204,7 +210,13 @@ public class JobServiceImpl implements JobService {
                     .eventType("UPDATE")
                     .data(existingJob)
                     .build();
-            kafkaTemplate.send("job_updated", jobEvent);
+            
+            if (descriptionChanged) {
+                kafkaTemplate.send("job_updated", jobEvent);
+            } else {
+                kafkaTemplate.send("job_updated_without_description_change", jobEvent);
+            }
+
             return new ResponseMessage(200, "Cập nhật công việc thành công");
         } catch (Exception e) {
             log.error("Lỗi cập nhật công việc ID {}: {}", id, e.getMessage(), e);

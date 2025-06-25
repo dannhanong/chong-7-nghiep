@@ -1,4 +1,4 @@
-package com.dan.events;
+package com.dan.job_service.controllers;
 
 import java.time.LocalDateTime;
 

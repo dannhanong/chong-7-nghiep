@@ -1,5 +1,3 @@
-"""OCR Engine module using PaddleOCR for Vietnamese text recognition."""
-
 import logging
 import time
 import numpy as np
@@ -13,20 +11,38 @@ logger = logging.getLogger(__name__)
 
 class OCREngine:
     """PaddleOCR wrapper optimized for Vietnamese CCCD text extraction."""
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            logger.info("Creating new OCREngine instance")
+            cls._instance = super(OCREngine, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(
         self,
         lang: str = settings.OCR_LANG,
-        use_angle_cls: bool = True
+        use_angle_cls: bool = True,
+        preload: bool = True
     ):
         """Initialize OCR Engine."""
+        if getattr(self, '_initialized', False):
+            return
+
         self.lang = lang
         self.use_angle_cls = use_angle_cls
         self._ocr_engine = None
         self._model_loaded = False
         self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model="gpt-4.1-nano"
+
+        self._initialized = True
         
         logger.info(f"Initializing OCR Engine with Lang: {self.lang}")
+
+        if preload:
+            self._load_model()
     
     def _load_model(self) -> None:
         """Lazy load OCR model to optimize startup time."""
@@ -136,7 +152,6 @@ class OCREngine:
     def _extract_other_info(self, texts: list, scores: list) -> dict:
         """Extract other relevant information from OCR results."""
         # Sử dụng openai để tiến hành chỉnh lại chính tả văn bản từ other_info
-        avg_confidence = sum(scores) / len(scores) if scores else 0.0
 
         response = self.openai_client.chat.completions.create(
             model=self.model,
@@ -176,7 +191,11 @@ class OCREngine:
         try:
             other_info = json.loads(response_data)
 
-            if other_info['full_name'] == "Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam".lower():
+            import re
+            def normalize_text(text):
+                return re.sub(r'\s+', ' ', text.strip().lower())
+
+            if normalize_text(other_info.get('full_name', '')) == normalize_text("Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam"):
                 other_info['full_name'] = ""
             return other_info
         except ValueError:
@@ -199,9 +218,7 @@ class OCREngine:
         """Extract text from image using OCR with ID number separation."""
         if not self._model_loaded:
             self._load_model()
-        
-        start_time = time.time()
-        
+                
         try:
             # Đảm bảo hình ảnh đúng định dạng
             if len(image.shape) == 2:  # Grayscale
@@ -239,19 +256,16 @@ class OCREngine:
                 if score >= min_confidence:
                     other_texts.append(text)
                     other_scores.append(score)
-            
-            processing_time = time.time() - start_time
-                        
+                                    
             if id_confidence < 0.9:
                 return {
                     'success': False,
+                    'error': "Không tìm thấy số CCCD hợp lệ trong ảnh. Vui lòng kiểm tra lại ảnh và thử lại.",
                     'id_card_number': None,
                     'other_info': {
                         'texts': other_texts,
                         'average_confidence': sum(other_scores) / len(other_scores) if other_scores else 0.0
-                    },
-                    'processing_time': processing_time,
-                    'error': "ID card number confidence too low"
+                    }
                 }
             else:
                 other_info = self._extract_other_info(other_texts, other_scores)
@@ -263,7 +277,6 @@ class OCREngine:
                         'confidence': id_confidence
                     },
                     'other_info': other_info,
-                    'processing_time': processing_time,
                     'total_detected': len(texts),
                     'total_filtered': len(other_texts) + (1 if id_number else 0)
                 }
@@ -272,13 +285,12 @@ class OCREngine:
             logger.error(f"OCR extraction failed: {str(e)}", exc_info=True)
             return {
                 'success': False,
+                'error': str(e),
                 'id_card_number': None,
                 'other_info': {
                     'texts': [],
                     'average_confidence': 0.0
-                },
-                'processing_time': time.time() - start_time,
-                'error': str(e)
+                }
             }
     
     def is_model_loaded(self) -> bool:
@@ -290,3 +302,7 @@ class OCREngine:
             if not value or value.strip() == "" or value is None:
                 return False
         return True
+    
+def get_ocr_engine():
+    """Get the singleton instance of OCREngine."""
+    return OCREngine()

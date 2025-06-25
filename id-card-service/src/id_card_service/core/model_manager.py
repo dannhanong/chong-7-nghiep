@@ -20,7 +20,6 @@ class ModelInfo:
     last_used: float
     usage_count: int
 
-
 class ModelManager:
     """Singleton manager for OCR model caching and lifecycle."""
     
@@ -193,7 +192,6 @@ class ModelManager:
                 self._cleanup_cache()
             
             logger.info(f"Set max cache size to {max_size}")
-
 
 # Global model manager instance
 model_manager = ModelManager()

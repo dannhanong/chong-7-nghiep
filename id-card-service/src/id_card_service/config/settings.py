@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     EUREKA_RENEWAL_INTERVAL: int = int(os.getenv("EUREKA_RENEWAL_INTERVAL", 30))
     EUREKA_INSTANCE_ID: str = os.getenv("EUREKA_INSTANCE_ID", f"{EUREKA_APP_NAME}:{uuid.uuid4()}")
 
+    # Kafka Settings
+    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "103.216.117.244:9095")
+
     # Other settings
     BASE_API_URL: str = os.getenv("BASE_API_URL", "http://localhost:8000")
 
@@ -76,9 +79,5 @@ class Settings(BaseSettings):
     JWT_SECRET: str = os.getenv("JWT_SECRET", "conghoaxahoichunghiavietnam/doclaptudohanhphuc/1975/1945")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     JWT_EXPIRATION_MINUTES: int = int(os.getenv("JWT_EXPIRATION_MINUTES", "60"))
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 settings = Settings()
