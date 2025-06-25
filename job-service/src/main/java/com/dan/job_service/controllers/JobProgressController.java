@@ -47,4 +47,19 @@ public class JobProgressController {
                     .body(new ResponseMessage(400, "Lỗi lấy tiến độ công việc: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/public/progress/{jobId}")
+    public ResponseEntity<?> getPublicJobProgress(@PathVariable String jobId) {
+        try {
+            // Lấy trạng thái tiến độ mới nhất của công việc
+            JobProgress latestProgress = jobProgressService.getLatestProgress(jobId);
+            if (latestProgress == null) {
+                return ResponseEntity.ok(new ResponseMessage(200, "Chưa có tiến độ nào cho công việc này"));
+            }
+            return ResponseEntity.ok(latestProgress);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(400, "Lỗi lấy tiến độ công việc: " + e.getMessage()));
+        }
+    }
 }
