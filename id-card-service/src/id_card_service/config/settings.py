@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     EUREKA_INSTANCE_ID: str = os.getenv("EUREKA_INSTANCE_ID", f"{EUREKA_APP_NAME}:{uuid.uuid4()}")
 
     # Kafka Settings
-    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "103.216.117.244:9095").split(",")
+    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
 
     # Other settings
     BASE_API_URL: str = os.getenv("BASE_API_URL", "http://localhost:8000")
