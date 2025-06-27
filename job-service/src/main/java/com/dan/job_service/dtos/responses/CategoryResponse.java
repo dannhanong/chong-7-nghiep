@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -23,4 +24,5 @@ public class CategoryResponse {
     CategoryResponse parent;
     Integer totalJob;
     List<CategoryResponse> childrens;
+    LocalDateTime deletedAt;
 }

@@ -181,7 +181,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                             .phoneNumber(userProfile.getPhoneNumber())
                             .avatarId(userProfile.getAvatarId())
                             .countApplied(countApplied)
-                            
+
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -189,108 +189,108 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements());
     }
 
-@Override
-public JobApplicationResponse getJobApplicationByJobId(String jobId, String username) {
-    String userId = identityServiceClient.getUserByUsername(username).getId();
-    Job job = jobRepository.findById(jobId)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+    @Override
+    public JobApplicationResponse getJobApplicationByJobId(String jobId, String username) {
+        String userId = identityServiceClient.getUserByUsername(username).getId();
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
 
-    List<JobApplication> lstApplication = jobApplicationRepository.findByJobId(jobId);
+        List<JobApplication> lstApplication = jobApplicationRepository.findByJobId(jobId);
 
-    JobApplication application = null;
-    UserProfileDetailResponse userProfile = null;
-    for (JobApplication jobApplication : lstApplication) {
-        logger.info("Compare: jobApplication.getUserId() = {}, userId = {}", jobApplication.getUserId(), userId);
-        if (userId != null && userId.equals(jobApplication.getUserId())) {
-            logger.info("Found userId: {}", jobApplication.getUserId());
-            application = jobApplication;
-            userProfile = profileServiceClient.getProfileByUserId(application.getUserId());
-            break;
+        JobApplication application = null;
+        UserProfileDetailResponse userProfile = null;
+        for (JobApplication jobApplication : lstApplication) {
+            logger.info("Compare: jobApplication.getUserId() = {}, userId = {}", jobApplication.getUserId(), userId);
+            if (userId != null && userId.equals(jobApplication.getUserId())) {
+                logger.info("Found userId: {}", jobApplication.getUserId());
+                application = jobApplication;
+                userProfile = profileServiceClient.getProfileByUserId(application.getUserId());
+                break;
+            }
         }
-    }
 
-    // Thêm điều kiện nếu không tìm thấy
-    if (application == null) {
-        throw new RuntimeException("Không tìm thấy đơn ứng tuyển của người dùng này cho công việc này");
-    }
+        // Thêm điều kiện nếu không tìm thấy
+        if (application == null) {
+            throw new RuntimeException("Không tìm thấy đơn ứng tuyển của người dùng này cho công việc này");
+        }
 
-    return JobApplicationResponse.builder()
-            .id(application.getId())
-            .userId(application.getUserId())
-            .jobId(application.getJobId())
-            .title(job.getTitle())
-            .userName(username)
-            .status(application.getStatus())
-            .offerSalary(application.getOfferSalary())
-            .offerPlan(application.getOfferPlan())
-            .offerSkill(application.getOfferSkill())
-            .appliedAt(application.getAppliedAt())
-            .updatedAt(application.getUpdatedAt())
-            .build();
-}
+        return JobApplicationResponse.builder()
+                .id(application.getId())
+                .userId(application.getUserId())
+                .jobId(application.getJobId())
+                .title(job.getTitle())
+                .userName(username)
+                .status(application.getStatus())
+                .offerSalary(application.getOfferSalary())
+                .offerPlan(application.getOfferPlan())
+                .offerSkill(application.getOfferSkill())
+                .appliedAt(application.getAppliedAt())
+                .updatedAt(application.getUpdatedAt())
+                .build();
+    }
 
     @Override
-public Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String jobId, Pageable pageable) {
-    jobRepository.findById(jobId)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc với ID: " + jobId));
+    public Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String jobId, Pageable pageable) {
+        jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc với ID: " + jobId));
 
-    Page<JobApplication> jobApplications = jobApplicationRepository.findByJobId(jobId, pageable);
-    
-    if (jobApplications.isEmpty()) {
-        throw new ResourceNotFoundException("Không tìm thấy đơn ứng tuyển cho công việc với ID: " + jobId);
+        Page<JobApplication> jobApplications = jobApplicationRepository.findByJobId(jobId, pageable);
+
+        if (jobApplications.isEmpty()) {
+            throw new ResourceNotFoundException("Không tìm thấy đơn ứng tuyển cho công việc với ID: " + jobId);
+        }
+
+        // --- PHẦN THAY ĐỔI BẮT ĐẦU TỪ ĐÂY ---
+
+        // Sử dụng một Set để lưu trữ các userId đã được xử lý
+        Set<String> seenUserIds = new HashSet<>();
+
+        List<JobApplicationProfileResponse> responseList = jobApplications.getContent().stream()
+                // Lọc danh sách, chỉ giữ lại những application có userId chưa xuất hiện
+                .filter(application -> seenUserIds.add(application.getUserId()))
+
+                // Ánh xạ những application đã được lọc
+                .map(application -> {
+                    UserProfileDetail userProfile = profileServiceClient
+                            .getPublicProfileByUserId(application.getUserId());
+
+                    Integer totalCountJobDone = jobApplicationRepository.countByUserIdAndStatus(application.getUserId(),
+                            ApplicationStatus.APPROVED);
+
+                    return JobApplicationProfileResponse.builder()
+                            .id(application.getId())
+                            .userId(userProfile.getUserId())
+                            .name(userProfile.getName())
+                            .enabled(userProfile.isEnabled())
+                            .email(userProfile.getEmail())
+                            .dob(userProfile.getDob())
+                            .avatarId(userProfile.getAvatarId())
+                            .pathName(userProfile.getPathName())
+                            .averageRating(userProfile.getAverageRating())
+                            .skills(userProfile.getSkills())
+                            .appliedAt(application.getAppliedAt())
+                            .offerPlan(application.getOfferPlan())
+                            .offerSkill(application.getOfferSkill())
+                            .offerSalary(application.getOfferSalary())
+                            .status(application.getStatus())
+                            .totalCountJobDone(totalCountJobDone)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        // Lưu ý: Tổng số phần tử trả về có thể khác với tổng số phần tử ban đầu
+        // sau khi đã lọc. Chúng ta sẽ tạo Page mới với số lượng thực tế.
+
+        logger.info("Total elements after filtering: {}", responseList);
+        return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements());
+        // Nếu bạn muốn totalElements phản ánh số lượng sau khi lọc, bạn cần
+        // một truy vấn khác để đếm số lượng userId duy nhất.
     }
-
-    // --- PHẦN THAY ĐỔI BẮT ĐẦU TỪ ĐÂY ---
-
-    // Sử dụng một Set để lưu trữ các userId đã được xử lý
-    Set<String> seenUserIds = new HashSet<>();
-
-    List<JobApplicationProfileResponse> responseList = jobApplications.getContent().stream()
-            // Lọc danh sách, chỉ giữ lại những application có userId chưa xuất hiện
-            .filter(application -> seenUserIds.add(application.getUserId()))
-            
-            // Ánh xạ những application đã được lọc
-            .map(application -> {
-                UserProfileDetail userProfile = profileServiceClient
-                        .getPublicProfileByUserId(application.getUserId());
-
-                Integer totalCountJobDone = jobApplicationRepository.countByUserIdAndStatus(application.getUserId(), ApplicationStatus.APPROVED);
-
-                return JobApplicationProfileResponse.builder()
-                        .userId(userProfile.getUserId())
-                        .name(userProfile.getName())
-                        .enabled(userProfile.isEnabled())
-                        .email(userProfile.getEmail())
-                        .dob(userProfile.getDob())
-                        .avatarId(userProfile.getAvatarId())
-                        .pathName(userProfile.getPathName())
-                        .averageRating(userProfile.getAverageRating())
-                        .skills(userProfile.getSkills())
-                        .appliedAt(application.getAppliedAt())
-                        .offerPlan(application.getOfferPlan())
-                        .offerSkill(application.getOfferSkill())
-                        .offerSalary(application.getOfferSalary())
-                        .totalCountJobDone(totalCountJobDone)
-                        .build();
-            })
-            .collect(Collectors.toList());
-
-    // Lưu ý: Tổng số phần tử trả về có thể khác với tổng số phần tử ban đầu
-    // sau khi đã lọc. Chúng ta sẽ tạo Page mới với số lượng thực tế.
-
-    logger.info("Total elements after filtering: {}", responseList);
-    return new PageImpl<>(responseList, pageable, jobApplications.getTotalElements()); 
-    // Nếu bạn muốn totalElements phản ánh số lượng sau khi lọc, bạn cần 
-    // một truy vấn khác để đếm số lượng userId duy nhất.
-}
-
 
     @Override
     public long countAppliedSuccess(String userId) {
         return jobApplicationRepository.countApprovedApplicationsByUserId(userId);
     }
-
-
 
     @Override
     public Object getJobApplicationDetail(String applicationId) {
@@ -343,5 +343,4 @@ public Page<JobApplicationProfileResponse> getPublicJobApplicationByJobId(String
         }).orElseThrow(() -> new RuntimeException("Đơn ứng tuyển không tồn tại"));
     }
 
-  
 }
