@@ -6,12 +6,15 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
+import com.dan.job_service.dtos.enums.ApplicationStatus;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class JobApplicationProfileResponse {
+      String id;
      String userId;
      String name;
      boolean enabled;
@@ -26,5 +29,6 @@ public class JobApplicationProfileResponse {
      String offerSkill;
      Integer totalCountJobDone;
      List<SkillResponse> skills;
+     ApplicationStatus status;
 
 }
