@@ -26,8 +26,10 @@ def get_id_card_by_user_id(user_id: str) -> dict:
         print(f"Using DB: {settings.MONGODB_USER_DATABASE}, Collection: {settings.MONGODB_IDENTITY_CARDS_COLLECTION}")
         print(f"Querying identity_cards with userId: '{user_id}' (type: {type(user_id)})")
 
-        identity_card = identity_cards_collection.find_one({"userId": {"$regex": user_id}})
-        print(identity_card)
+        print(f"Mongo URI: {settings.MONGODB_URI}")
+        print(f"DB: {settings.MONGODB_USER_DATABASE}, Collection: {settings.MONGODB_IDENTITY_CARDS_COLLECTION}")
+
+        identity_card = identity_cards_collection.find_one({"userId": user_id})
 
         if identity_card:
             return identity_card
