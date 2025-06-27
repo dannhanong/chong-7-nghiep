@@ -52,7 +52,7 @@ class SemanticContentBasedRecommender:
             )
 
             job_embedding_docs = list(job_embeddings_collection.find({}))
-            job_embeddings_map = {doc["job_id"]: doc["embedding"] for doc in job_embedding_docs}
+            job_embeddings_map = {doc["jobId"]: doc["embedding"] for doc in job_embedding_docs}
 
             # Lọc jobs có embeddings và tạo DataFrame
             jobs_with_embeddings = []
@@ -119,7 +119,7 @@ class SemanticContentBasedRecommender:
                 
                 # Lưu embedding vào MongoDB nếu có user_id
                 if user_id:
-                    self.store_profile_embedding(user_id, profile_data, profile_embedding)
+                    self._store_profile_embedding(user_id, profile_data, profile_embedding)
                     
             # Đảm bảo embedding là 2D array
             if profile_embedding.ndim == 1:
