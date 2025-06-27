@@ -51,11 +51,11 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
 
     # MongoDB settings
-    MONGO_HOST: str = os.getenv("MONGO_HOST", "localhost")
-    MONGO_PORT: int = int(os.getenv("MONGO_PORT", "27017"))
-    MONGO_USER: str = os.getenv("MONGO_USER", "root")
-    MONGO_PASS: str = os.getenv("MONGO_PASS", "")
-    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://root:123456@103.216.117.244:27017")
+    # MONGO_HOST: str = os.getenv("MONGO_HOST", "localhost")
+    # MONGO_PORT: int = int(os.getenv("MONGO_PORT", "27017"))
+    # MONGO_USER: str = os.getenv("MONGO_USER", "root")
+    # MONGO_PASS: str = os.getenv("MONGO_PASS", "")
+    MONGODB_URI: str = os.getenv("MONGODB_URI")
     MONGODB_USER_DATABASE: str = os.getenv("MONGODB_USER_DATABASE", "links_auth")
     MONGODB_USERS_COLLECTION: str = os.getenv("MONGODB_USERS_COLLECTION", "users")
     MONGODB_IDENTITY_CARDS_COLLECTION: str = os.getenv("MONGODB_IDENTITY_CARDS_COLLECTION", "identity_cards")
