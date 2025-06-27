@@ -65,6 +65,7 @@ class FaceRecognizer():
         
         try:
             logger.info(f"Starting registration from MongoDB: {user_id}")
+            print(f"Starting registration from MongoDB: {user_id}")
             
             # 1. Lấy thông tin identity card từ collection identity_cards
             identity_card = get_id_card_by_user_id(user_id)

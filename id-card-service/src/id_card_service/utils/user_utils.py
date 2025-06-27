@@ -34,7 +34,7 @@ def get_user_id_from_username(username: str) -> Optional[str]:
 
         if user:
             user_id = str(user["_id"])
-            _username_cache[username] = user_id
+            # _username_cache[username] = user_id
             return user_id
 
         logger.warning(f"User with username '{username}' not found in database.")
