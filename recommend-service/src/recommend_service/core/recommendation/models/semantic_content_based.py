@@ -119,7 +119,7 @@ class SemanticContentBasedRecommender:
                 
                 # Lưu embedding vào MongoDB nếu có user_id
                 if user_id:
-                    self._store_profile_embedding(user_id, profile_data, profile_embedding)
+                    self.store_profile_embedding(user_id, profile_data, profile_embedding)
                     
             # Đảm bảo embedding là 2D array
             if profile_embedding.ndim == 1:
@@ -211,7 +211,7 @@ class SemanticContentBasedRecommender:
             logger.error(f"Error in job recommendations: {e}", exc_info=True)
             return []
     
-    def _store_profile_embedding(self, user_id, profile_data, profile_embedding):
+    def store_profile_embedding(self, user_id, profile_data, profile_embedding):
         """Lưu profile embedding vào MongoDB"""
         try:
             # Tạo hash để phát hiện thay đổi
@@ -224,7 +224,7 @@ class SemanticContentBasedRecommender:
             )
             
             result = profile_embeddings_collection.update_one(
-                {"user_id": user_id},
+                {"userId": user_id},
                 {"$set": {
                     "embedding": profile_embedding.tolist() if isinstance(profile_embedding, np.ndarray) else profile_embedding,
                     "profile_hash": profile_hash,

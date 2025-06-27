@@ -154,7 +154,7 @@ class KafkaEventConsumer:
             )
             
             result = embeddings_collection.update_one(
-                {"job_id": job_id},
+                {"jobId": job_id},
                 {"$set": {
                     "embedding": embedding.tolist(),
                     "updated_at": datetime.now()
@@ -163,12 +163,12 @@ class KafkaEventConsumer:
             )
 
             if result.matched_count > 0:
-                logger.info(f"Updated existing embedding for job_id: {job_id}")
+                logger.info(f"Updated existing embedding for jobId: {job_id}")
             else:
-                logger.info(f"Created new embedding for job_id: {job_id}, inserted_id: {result.upserted_id}")
-            
-            logger.info(f"Updated embedding for job_id: {job_id}")
-            
+                logger.info(f"Created new embedding for jobId: {job_id}, inserted_id: {result.upserted_id}")
+
+            logger.info(f"Updated embedding for jobId: {job_id}")
+
         except Exception as e:
             logger.error(f"Error updating job embedding: {e}")
 
@@ -212,7 +212,7 @@ class KafkaEventConsumer:
             )
             
             result = embeddings_collection.update_one(
-                {"job_id": job_id},
+                {"jobId": job_id},
                 {"$set": {
                     "embedding": embedding.tolist(),
                     "updated_at": datetime.now()
@@ -221,12 +221,12 @@ class KafkaEventConsumer:
             )
 
             if result.matched_count > 0:
-                logger.info(f"Updated existing embedding for job_id: {job_id}")
+                logger.info(f"Updated existing embedding for jobId: {job_id}")
             else:
-                logger.info(f"Created new embedding for job_id: {job_id}, inserted_id: {result.upserted_id}")
-            
-            logger.info(f"Updated embedding for job_id: {job_id}")
-            
+                logger.info(f"Created new embedding for jobId: {job_id}, inserted_id: {result.upserted_id}")
+
+            logger.info(f"Updated embedding for jobId: {job_id}")
+
         except Exception as e:
             logger.error(f"Error updating job embedding: {e}")
 
@@ -277,8 +277,8 @@ class KafkaEventConsumer:
                 settings.MONGODB_JOB_DATABASE,
                 settings.MONGODB_JOB_EMBEDDINGS_COLLECTION
             )
-            embeddings_collection.delete_one({"job_id": job_id})
-            logger.info(f"Deleted embedding for job_id: {job_id}")
+            embeddings_collection.delete_one({"jobId": job_id})
+            logger.info(f"Deleted embedding for jobId: {job_id}")
         except Exception as e:
             logger.error(f"Error deleting job embedding: {e}")
 
@@ -297,8 +297,8 @@ class KafkaEventConsumer:
             embedding = self.semantic_recommender.model.encode([profile_content])[0]
             
             # Lưu vào MongoDB
-            self.semantic_recommender._store_profile_embedding(user_id, user_profile, embedding)
-            logger.info(f"Updated profile embedding for user_id: {user_id}")
-                    
+            self.semantic_recommender.store_profile_embedding(user_id, user_profile, embedding)
+            logger.info(f"Updated profile embedding for userId: {user_id}")
+
         except Exception as e:
             logger.error(f"Error updating profile embedding: {e}")
