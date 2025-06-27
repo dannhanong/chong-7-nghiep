@@ -119,7 +119,7 @@ class SemanticContentBasedRecommender:
                 
                 # Lưu embedding vào MongoDB nếu có user_id
                 if user_id:
-                    self._store_profile_embedding(user_id, profile_data, profile_embedding)
+                    self.store_profile_embedding(user_id, profile_data, profile_embedding)
                     
             # Đảm bảo embedding là 2D array
             if profile_embedding.ndim == 1:
