@@ -137,11 +137,11 @@ class KafkaEventConsumer:
             content = ' '.join([
                 f"Tiêu đề: {job_data.get('title', '')}",
                 f"Mô tả: {clean_description}",
-                f"Yêu cầu: {job_data.get('requirements', '')}",
+                # f"Yêu cầu: {job_data.get('requirements', '')}",
                 f"Danh mục chính: {main_category_name}",
-                f"Kỹ năng: {job_data.get('skills', '')}",
+                # f"Kỹ năng: {job_data.get('skills', '')}",
                 f"Kinh nghiệm: {job_data.get('experienceLevel', '')}",
-                f"Tags: {', '.join(job_data.get('tags', []))}",
+                # f"Tags: {', '.join(job_data.get('tags', []))}",
             ])
             
             # Tạo embedding
