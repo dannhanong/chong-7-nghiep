@@ -252,7 +252,7 @@ def get_recognizer():
     summary="Batch Face Recognition",
     description="Recognize faces in multiple images and return aggregated results"
 )
-async def batch_recognize(
+async def verify_face(
     request: Request,
     data: Dict = Body(...),
     recognizer: FaceRecognizer = Depends(get_recognizer)
@@ -349,29 +349,34 @@ async def batch_recognize(
                 "processed_images": 0,
                 "total_images": len(images)
             }
-        
-        # Nếu ít nhất 50% ảnh được nhận diện thành công, coi như nhận diện thành công
-        recognition_threshold = 0.5  # 50%
+
+        # Nếu ít nhất 60% ảnh được nhận diện thành công, coi như nhận diện thành công
+        recognition_threshold = 0.6  # 60%
         recognized = (successful_recognitions / total_processed) >= recognition_threshold
         
         # Tính điểm trung bình
         avg_confidence = statistics.mean(confidence_scores) if confidence_scores else 0
         avg_distance = statistics.mean(distance_scores) if distance_scores else 1.0
-        
-        if avg_confidence > 0.55:
+
+        if avg_confidence > 0.6:
             logger.info(f"Batch recognition successful: {successful_recognitions}/{total_processed} images recognized")
             update_user_identity_verify(username)
             return {
                 "recognized": recognized,
-                "user_id": user_id,
-                "average_confidence": avg_confidence,
-                "average_distance": avg_distance,
-                "successful_recognitions": successful_recognitions,
-                "processed_images": total_processed,
-                "total_images": len(images),
-                "recognition_rate": (successful_recognitions / total_processed) if total_processed > 0 else 0,
-                "individual_results": individual_results
+                # "average_confidence": avg_confidence,
+                # "average_distance": avg_distance,
+                # "successful_recognitions": successful_recognitions,
+                # "processed_images": total_processed,
+                # "total_images": len(images),
+                # "recognition_rate": (successful_recognitions / total_processed) if total_processed > 0 else 0,
+                # "individual_results": individual_results
+                "message": f"Xác thực danh tính thành công"
             }
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Xác thực danh tính không thành công. Vui lòng thử lại."
+            )
         
     except Exception as e:
         logger.error(f"Batch recognition error: {str(e)}")
