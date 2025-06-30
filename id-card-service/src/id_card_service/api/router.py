@@ -358,7 +358,7 @@ async def verify_face(
         avg_confidence = statistics.mean(confidence_scores) if confidence_scores else 0
         avg_distance = statistics.mean(distance_scores) if distance_scores else 1.0
 
-        if avg_confidence > 0.6:
+        if avg_confidence > 60 and avg_distance < 0.55:
             logger.info(f"Batch recognition successful: {successful_recognitions}/{total_processed} images recognized")
             update_user_identity_verify(username)
             return {
