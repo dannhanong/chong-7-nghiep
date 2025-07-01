@@ -10,13 +10,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.dan.job_profile_service.configs.AuthenticationRequestInterceptor;
 
+import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "file-service", configuration = {AuthenticationRequestInterceptor.class})
+@FeignClient(name = "file-service", configuration = { AuthenticationRequestInterceptor.class })
 public interface FileServiceClient {
     @PostMapping(value = "/files/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     Map<String, String> uploadFile(@RequestPart("file") MultipartFile file);
 
     @DeleteMapping("/files/delete/code/{fileCode}")
     void deleteFileByFileCode(@PathVariable String fileCode);
+
+    @PostMapping(value = "/files/public/upload-for-job/multiple-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    List<String> uploadMultipleFilesForJob(@RequestPart("files") List<MultipartFile> files);
+
 }

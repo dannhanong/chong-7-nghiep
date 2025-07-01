@@ -3,8 +3,10 @@ package com.dan.job_profile_service.dtos.requests;
 import com.dan.job_profile_service.dtos.enums.EmploymentType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -22,4 +24,6 @@ public class ExperienceRequest {
     LocalDate endDate;
     String description;
     String achievements;
+    MultipartFile file;
+    List<MultipartFile> otherFiles;
 }

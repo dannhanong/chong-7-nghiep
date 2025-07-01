@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Document(collection = "experiences")
 @Getter
@@ -37,4 +38,8 @@ public class Experience extends BaseEntity{
     private String description;
     //thanh tuu
     private String achievements;
+
+    String file;
+    List<String> otherFiles;
+
 }

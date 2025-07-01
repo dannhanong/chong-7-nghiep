@@ -25,7 +25,7 @@ public class ExperienceController {
     @PostMapping("/create")
     public ResponseEntity<ResponseMessage> createExperience(
             HttpServletRequest request,
-            @Valid @RequestBody ExperienceRequest experienceRequest
+            @Valid @ModelAttribute ExperienceRequest experienceRequest
     ) {
         try {
             String username = jwtService.getUsernameFromRequest(request);
