@@ -192,10 +192,9 @@ public class JobServiceImpl implements JobService {
                 existingJob.setDescription(existingJob.getDescription());
             }
 
-            MultipartFile file = jobRequest.file();
-            if (file != null && !file.isEmpty()) {
+            if (jobRequest.file() != null && !jobRequest.file().isEmpty()) {
                 String existingFileCode = existingJob.getFile();
-                Map<String, String> res = fileServiceClient.uploadFile(file);
+                Map<String, String> res = fileServiceClient.uploadFile(jobRequest.file());
                 String fileCode = res.get("fileCode");
                 existingJob.setFile(fileCode);
                 if (existingFileCode != null && !existingFileCode.isEmpty()) {

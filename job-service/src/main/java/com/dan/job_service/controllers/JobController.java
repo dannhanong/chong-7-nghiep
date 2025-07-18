@@ -87,19 +87,19 @@ public class JobController {
         }
     }
 
-    @PutMapping("/public/update/{id}")
-    public ResponseEntity<?> userUpdateJob(@PathVariable String id, @Valid @ModelAttribute JobRequest jobRequest,
-            HttpServletRequest request) {
-        try {
-            String username = jwtService.getUsernameFromRequest(request);
-            jobService.userUpdateJob(id, jobRequest, username);
-            return ResponseEntity.ok(new ResponseMessage(200, "Cập nhật công việc thành công"));
-        } catch (Exception e) {
-            log.error("Lỗi cập nhật công việc ID {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                    .body(new ResponseMessage(400, "Lỗi khi cập nhật công việc: " + e.getMessage()));
-        }
-    }
+    // @PutMapping("/public/update/{id}")
+    // public ResponseEntity<?> userUpdateJob(@PathVariable String id, @Valid @ModelAttribute JobRequest jobRequest,
+    //         HttpServletRequest request) {
+    //     try {
+    //         String username = jwtService.getUsernameFromRequest(request);
+    //         jobService.userUpdateJob(id, jobRequest, username);
+    //         return ResponseEntity.ok(new ResponseMessage(200, "Cập nhật công việc thành công"));
+    //     } catch (Exception e) {
+    //         log.error("Lỗi cập nhật công việc ID {}: {}", id, e.getMessage(), e);
+    //         return ResponseEntity.badRequest()
+    //                 .body(new ResponseMessage(400, "Lỗi khi cập nhật công việc: " + e.getMessage()));
+    //     }
+    // }
 
     @DeleteMapping("/private/{id}")
     public ResponseEntity<?> deleteJobById(@PathVariable String id, HttpServletRequest request) {
