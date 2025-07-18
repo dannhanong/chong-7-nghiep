@@ -332,10 +332,12 @@ class HybridRecommender:
                         
             # Tổng hợp thông tin
             skill_names = [skill['skill_name'] for skill in skills]
+            skill_descriptions = [skill.get('description', '') for skill in skills if 'description' in skill]
             job_titles = [exp['company_name'] for exp in experiences]
             
             profile = {
                 'skills': ' '.join(skill_names),
+                'skill_descriptions': ' '.join(skill_descriptions),
                 'job_titles': ' '.join(job_titles),
                 'experience': ' '.join([exp.get('description', '') for exp in experiences if 'description' in exp]),
                 'skill_level': {skill['skill_name']: skill['years_experience'] for skill in skills if 'years_experience' in skill}
