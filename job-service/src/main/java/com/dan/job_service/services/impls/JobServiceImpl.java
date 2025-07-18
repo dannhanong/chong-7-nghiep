@@ -648,7 +648,6 @@ public Page<JobApplicationApplied> getAppliedJobs(String username, Pageable page
 public ResponseMessage updateJobStatus(String jobId, Boolean status, String username) {
     Job job = jobRepository.findById(jobId)
             .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
-    UserDetailToCreateJob user = identityServiceClient.getUserByUsername(username);
 
     job.setStatus(status);
     job.setUpdatedAt(LocalDateTime.now());

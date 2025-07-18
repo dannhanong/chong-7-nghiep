@@ -164,9 +164,9 @@ public class CategoryServiceImpl implements CategoryService {
 
         // Nếu có keyword, tìm theo tên và chưa xóa; nếu không, lấy tất cả chưa xóa
         if (keyword != null && !keyword.trim().isEmpty()) {
-            categories = categoryRepository.findAllByNameContainingIgnoreCaseAndDeletedAtNull(keyword, pageable);
+            categories = categoryRepository.findAllByNameContainingIgnoreCaseAndDeletedAtNullAndParentIdNull(keyword, pageable);
         } else {
-            categories = categoryRepository.findByDeletedAtNull(pageable);
+            categories = categoryRepository.findByDeletedAtNullAndParentIdNull(pageable);
         }
 
         return categories.map(category -> {
