@@ -7,6 +7,7 @@ from recommend_service.config.settings import settings
 import py_eureka_client.eureka_client as eureka_client
 from recommend_service.core.recommendation.models.semantic_content_based import SemanticContentBasedRecommender
 from recommend_service.core.kafka.kafka_consumer import KafkaEventConsumer
+from recommend_service.core.singleton_services import RecommenderService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,6 +46,10 @@ async def startup_event():
         semantic_recommender = SemanticContentBasedRecommender()
         semantic_recommender.fit()  # Load/create embeddings
         logger.info("Semantic Content Based Recommender initialized successfully")
+
+        recommender_service = RecommenderService()
+        recommender_service.initialize(semantic_recommender=semantic_recommender)
+        logger.info("Recommender service singleton initialized")
     except Exception as e:
         logger.error(f"Failed to initialize Semantic Content Based Recommender: {str(e)}")
 
