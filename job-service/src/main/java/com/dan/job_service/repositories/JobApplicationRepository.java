@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.dan.job_service.dtos.enums.ApplicationStatus;
-import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.models.JobApplication;
 
 @Repository
@@ -26,5 +25,5 @@ public interface JobApplicationRepository extends MongoRepository<JobApplication
     List<JobApplication> findByJobId(String jobId);
     Integer countByUserIdAndStatus(String userId, ApplicationStatus status);
     Page<JobApplication> findByUserIdAndStatus(String userId, String status, Pageable pageable);
-
+    List<JobApplication> findByJobIdAndStatus(String jobId, ApplicationStatus status);
 }

@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.dan.events.dtos.EventAddJobDataForRecommend;
 import com.dan.events.dtos.JobEvent;
+import com.dan.events.dtos.RecentActivityJobMessage;
+import com.dan.events.dtos.RecentActivityRevenueMessage;
 import com.dan.job_service.dtos.requets.JobRequest;
 import com.dan.job_service.dtos.responses.JobApplicationApplied;
 import com.dan.job_service.dtos.responses.JobDetail;
@@ -33,6 +35,7 @@ import com.dan.job_service.repositories.JobRepository;
 import com.dan.job_service.repositories.JobProgressRepository;
 import com.dan.job_service.services.DateFormatter;
 import com.dan.job_service.services.JobService;
+import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.enums.JobStatus;
 import com.dan.job_service.models.JobProgress;
 import com.dan.job_service.repositories.JobApplicationRepository;
@@ -136,6 +139,12 @@ public class JobServiceImpl implements JobService {
                     .data(savedJob)
                     .build();
             kafkaTemplate.send("job_created", jobEvent);
+
+            kafkaTemplate.send("create_recent_activity_job", RecentActivityJobMessage.builder()
+                    .userId(user.getId())
+                    .userName(user.getName())
+                    .jobId(savedJob.getId())
+                    .build());
 
             return new ResponseMessage(200, "Tạo công việc thành công");
         } catch (Exception e) {
@@ -539,6 +548,26 @@ public Page<JobApplicationApplied> getAppliedJobs(String username, Pageable page
             jobRepository.save(job);
 
             log.info("Job {} đã được đánh dấu hoàn thành bởi user {}", jobId, username);
+
+            kafkaTemplate.send("create_recent_activity_job_done", RecentActivityJobMessage.builder()
+                    .userId(user.getId())
+                    .userName(user.getName())
+                    .jobId(job.getId())
+                    .build());
+
+            List<JobApplication> applications = jobApplicationRepository.findByJobIdAndStatus(jobId, ApplicationStatus.APPROVED);
+
+            applications.forEach(application -> {
+                UserDetailToCreateJob applicationUser = identityServiceClient.getUserById(application.getUserId());
+
+                kafkaTemplate.send("create_recent_activity_revenue", RecentActivityRevenueMessage.builder()
+                    .userId(application.getUserId())
+                    .userName(applicationUser.getName())
+                    .jobId(job.getId())
+                    .revenue(application.getOfferSalary())
+                    .build());
+            });
+
             return new ResponseMessage(200, "Đánh dấu công việc hoàn thành thành công");
 
         } catch (Exception e) {

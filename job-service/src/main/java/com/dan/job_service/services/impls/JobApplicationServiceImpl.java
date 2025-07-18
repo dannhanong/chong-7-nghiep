@@ -1,5 +1,6 @@
 package com.dan.job_service.services.impls;
 
+import com.dan.events.dtos.RecentActivityApplicationMessage;
 import com.dan.job_service.controllers.JobApplicationController;
 import com.dan.job_service.dtos.enums.ApplicationStatus;
 import com.dan.job_service.dtos.requets.JobApplicationRequest;
@@ -7,6 +8,7 @@ import com.dan.job_service.dtos.responses.JobApplicationResponse;
 import com.dan.job_service.dtos.responses.JobApplicationDetailResponse;
 import com.dan.job_service.dtos.responses.JobApplicationProfileResponse;
 import com.dan.job_service.dtos.responses.JobApplicationWithJobResponse;
+import com.dan.job_service.dtos.responses.JobDetail;
 import com.dan.job_service.dtos.responses.ResponseMessage;
 import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
 import com.dan.job_service.dtos.responses.UserProfileDetail;
@@ -23,6 +25,7 @@ import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.slf4j.*;
 
@@ -36,12 +39,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class JobApplicationServiceImpl implements JobApplicationService {
-
     private final JobApplicationRepository jobApplicationRepository;
     private final JobRepository jobRepository;
     private final IdentityServiceClient identityServiceClient;
     private final ProfileServiceClient profileServiceClient;
     private static final Logger logger = LoggerFactory.getLogger(JobApplicationController.class);
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
     public ResponseMessage applyJob(JobApplicationRequest request, String jobId, String username) {
@@ -81,6 +84,21 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn ứng tuyển với id: " + id));
 
         jobApplication.setStatus(ApplicationStatus.valueOf(status));
+
+        if (status.equalsIgnoreCase("APPROVED")) {
+            Job job = jobRepository.findById(jobApplication.getJobId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy công việc"));
+
+            kafkaTemplate.send("create_recent_activity_application", RecentActivityApplicationMessage.builder()
+                    .job(JobDetail.builder()
+                            .id(job.getId())
+                            .title(job.getTitle())
+                            .userId(job.getUserId())
+                            .build())
+                    .user(identityServiceClient.getUserById(jobApplication.getUserId()))
+                    .build());
+        }
+        
         jobApplication.setUpdatedAt(LocalDateTime.now());
 
         jobApplicationRepository.save(jobApplication);

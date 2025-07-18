@@ -12,10 +12,10 @@ import com.dan.job_service.models.Category;
 @Repository
 public interface CategoryRepository extends MongoRepository<Category, String> {
     List<Category> findByParentId(String parentId);
-    Page<Category> findAllByNameContainingIgnoreCaseAndDeletedAtIsNull(String name, Pageable pageable);
+    Page<Category> findAllByNameContainingIgnoreCaseAndDeletedAtNull(String name, Pageable pageable);
     // Tìm tất cả danh mục chưa bị xóa
-    Page<Category> findByDeletedAtIsNull(Pageable pageable);
+    Page<Category> findByDeletedAtNull(Pageable pageable);
 
     // Tìm danh mục con chưa bị xóa
-    List<Category> findByParentIdAndDeletedAtIsNull(String parentId);
+    List<Category> findByParentIdAndDeletedAtNull(String parentId);
 }

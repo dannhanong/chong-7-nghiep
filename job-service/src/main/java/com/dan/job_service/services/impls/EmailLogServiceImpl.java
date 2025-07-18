@@ -1,25 +1,17 @@
 package com.dan.job_service.services.impls;
 
 import com.dan.events.dtos.EventRecommendJob;
-import com.dan.events.dtos.NotificationEvent;
 import com.dan.events.dtos.responses.RecommendJobGmailResponse;
 import com.dan.job_service.dtos.responses.JobDetail;
-import com.dan.job_service.dtos.responses.JobDetailEmail;
 import com.dan.job_service.dtos.responses.UserDetailToCreateJob;
 import com.dan.job_service.http_clients.IdentityServiceClient;
 import com.dan.job_service.http_clients.RecommendClient;
 import com.dan.job_service.models.EmailLog;
-import com.dan.job_service.models.Job;
-import com.dan.job_service.models.Category;
 import com.dan.job_service.repositories.EmailLogRepository;
-import com.dan.job_service.repositories.JobRepository;
-import com.dan.job_service.repositories.CategoryRepository;
 import com.dan.job_service.services.EmailLogService;
 import com.dan.job_service.services.JobService;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +23,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EmailLogServiceImpl implements EmailLogService {
     private final EmailLogRepository emailLogRepository;
-    private final JobRepository jobRepository;
-    private final CategoryRepository categoryRepository;
     private final IdentityServiceClient identityServiceClient;
     private final RecommendClient recommendClient;
     private final KafkaTemplate<String, Object> kafkaTemplate;

@@ -8,7 +8,6 @@ import com.dan.job_service.repositories.CategoryRepository;
 import com.dan.job_service.repositories.JobRepository;
 import com.dan.job_service.services.CategoryService;
 import com.dan.job_service.services.JobService;
-import com.netflix.discovery.converters.Auto;
 
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,7 +83,7 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.findById(id).map(category -> {
             category.setDeletedAt(LocalDateTime.now());
             categoryRepository.save(category);
-             deleteChildrenCategories(id);
+            deleteChildrenCategories(id);
             // xóa tất cả các công việc liên quản đến danh mục này
             jobService.deleteJobsByCategoryId(id);
            
@@ -160,55 +159,55 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
    @Override
-public Page<CategoryResponse> getAllCategories(String keyword, Pageable pageable) {
-    Page<Category> categories;
+    public Page<CategoryResponse> getAllCategories(String keyword, Pageable pageable) {
+        Page<Category> categories;
 
-    // Nếu có keyword, tìm theo tên và chưa xóa; nếu không, lấy tất cả chưa xóa
-    if (keyword != null && !keyword.trim().isEmpty()) {
-        categories = categoryRepository.findAllByNameContainingIgnoreCaseAndDeletedAtIsNull(keyword, pageable);
-    } else {
-        categories = categoryRepository.findByDeletedAtIsNull(pageable);
-    }
-
-    return categories.map(category -> {
-        // Lấy danh mục con chưa xóa
-        List<CategoryResponse> childCategories = categoryRepository.findByParentIdAndDeletedAtIsNull(category.getId())
-            .stream()
-            .map(child -> CategoryResponse.builder()
-                .id(child.getId())
-                .name(child.getName())
-                .description(child.getDescription())
-                .deletedAt(child.getDeletedAt())
-                .totalJob(jobRepository.countByCategoryId(child.getId()))
-                .build())
-            .toList();
-
-        // Lấy danh mục cha nếu có và chưa bị xóa
-        CategoryResponse parentCategoryResponse = null;
-        if (category.getParentId() != null) {
-            parentCategoryResponse = categoryRepository.findById(category.getParentId())
-                .filter(parent -> parent.getDeletedAt() == null)
-                .map(parent -> CategoryResponse.builder()
-                    .id(parent.getId())
-                    .name(parent.getName())
-                    .description(parent.getDescription())
-                    .deletedAt(parent.getDeletedAt())
-                    .totalJob(jobRepository.countByCategoryId(parent.getId()))
-                    .build())
-                .orElse(null);
+        // Nếu có keyword, tìm theo tên và chưa xóa; nếu không, lấy tất cả chưa xóa
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            categories = categoryRepository.findAllByNameContainingIgnoreCaseAndDeletedAtNull(keyword, pageable);
+        } else {
+            categories = categoryRepository.findByDeletedAtNull(pageable);
         }
 
-        // Trả về dữ liệu danh mục chính
-        return CategoryResponse.builder()
-            .id(category.getId())
-            .name(category.getName())
-            .description(category.getDescription())
-            .deletedAt(category.getDeletedAt())
-            .parent(parentCategoryResponse)
-            .totalJob(jobRepository.countByCategoryId(category.getId()))
-            .childrens(childCategories)
-            .build();
-    });
-}
+        return categories.map(category -> {
+            // Lấy danh mục con chưa xóa
+            List<CategoryResponse> childCategories = categoryRepository.findByParentIdAndDeletedAtNull(category.getId())
+                .stream()
+                .map(child -> CategoryResponse.builder()
+                    .id(child.getId())
+                    .name(child.getName())
+                    .description(child.getDescription())
+                    .deletedAt(child.getDeletedAt())
+                    .totalJob(jobRepository.countByCategoryId(child.getId()))
+                    .build())
+                .toList();
+
+            // Lấy danh mục cha nếu có và chưa bị xóa
+            CategoryResponse parentCategoryResponse = null;
+            if (category.getParentId() != null) {
+                parentCategoryResponse = categoryRepository.findById(category.getParentId())
+                    .filter(parent -> parent.getDeletedAt() == null)
+                    .map(parent -> CategoryResponse.builder()
+                        .id(parent.getId())
+                        .name(parent.getName())
+                        .description(parent.getDescription())
+                        .deletedAt(parent.getDeletedAt())
+                        .totalJob(jobRepository.countByCategoryId(parent.getId()))
+                        .build())
+                    .orElse(null);
+            }
+
+            // Trả về dữ liệu danh mục chính
+            return CategoryResponse.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .deletedAt(category.getDeletedAt())
+                .parent(parentCategoryResponse)
+                .totalJob(jobRepository.countByCategoryId(category.getId()))
+                .childrens(childCategories)
+                .build();
+        });
+    }
 
 }
