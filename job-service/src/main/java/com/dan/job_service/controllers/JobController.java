@@ -205,6 +205,21 @@ public class JobController {
         }
     }
 
+    @GetMapping("/public/get-jobs-by-user/{userId}")
+    public ResponseEntity<Page<JobApplicationApplied>> getJobsByUserId(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            return ResponseEntity.ok(jobService.getAppliedConfirmedJobs(userId, pageable));
+        } catch (Exception e) {
+            log.error("Lỗi lấy danh sách công việc của người dùng ID {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(null);
+        }
+    }
+
     @PutMapping("/private/{jobId}/mark-done")
     public ResponseEntity<?> markJobAsDone(@PathVariable String jobId, HttpServletRequest request) {
         try {

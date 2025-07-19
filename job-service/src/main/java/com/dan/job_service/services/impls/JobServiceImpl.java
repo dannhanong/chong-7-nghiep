@@ -668,4 +668,30 @@ public ResponseMessage updateJobStatus(String jobId, Boolean status, String user
         jobRepository.save(job);
         return new ResponseMessage(200, "Cập nhật trạng thái active thành công");
     }
+
+    @Override
+    public Page<JobApplicationApplied> getAppliedConfirmedJobs(String userId, Pageable pageable) {
+        Page<JobApplication> userApplications = jobApplicationRepository.findByUserIdAndStatus(userId, ApplicationStatus.APPROVED, pageable);
+        
+        List<JobApplicationApplied> appliedJobs = userApplications.getContent()
+            .stream()
+            .map(application -> {
+                Job job = jobRepository.findById(application.getJobId()).orElse(null);
+                if (job == null) return null;
+                return JobApplicationApplied.builder()
+                        .id(job.getId())
+                        .title(job.getTitle())
+                        .shortDescription(job.getShortDescription())
+                        .salaryMin(job.getSalaryMin())
+                        .salaryMax(job.getSalaryMax())
+                        .applicationDeadline(job.getApplicationDeadline())
+                        .done(job.getDone())
+                        .status(application.getStatus() != null ? application.getStatus().toString() : null)
+                        .build();
+            })
+            .filter(dto -> dto != null)
+            .collect(Collectors.toList());
+
+        return new PageImpl<>(appliedJobs, pageable, userApplications.getTotalElements());
+    }
 }

@@ -37,6 +37,8 @@ public interface JobService {
 
     Page<JobApplicationApplied> getAppliedJobs(String username, Pageable pageable,String status);
 
+    Page<JobApplicationApplied> getAppliedConfirmedJobs(String userId, Pageable pageable);
+
     ResponseMessage testEmJob();
 
     // xóa công việc nếu danh mục của nó bị xóa
