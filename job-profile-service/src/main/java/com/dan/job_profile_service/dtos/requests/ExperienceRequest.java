@@ -18,7 +18,7 @@ public class ExperienceRequest {
     String profileId;
     String companyName;
     String position;
-    EmploymentType employmentType; //FULL_TIME, PART_TIME, INTERN, COLLABORATOR
+    String employmentType; //FULL_TIME, PART_TIME, INTERN, COLLABORATOR
     String location;
     LocalDate startDate;
     LocalDate endDate;

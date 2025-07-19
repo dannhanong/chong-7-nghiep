@@ -1,6 +1,7 @@
 package com.dan.job_profile_service.services.impl;
 
 import com.dan.events.dtos.JobProfileEvent;
+import com.dan.job_profile_service.dtos.enums.EmploymentType;
 import com.dan.job_profile_service.dtos.requests.ExperienceRequest;
 import com.dan.job_profile_service.dtos.responses.ResponseMessage;
 import com.dan.job_profile_service.http_clients.FileServiceClient;
@@ -46,7 +47,7 @@ public class ExperienceServiceImpl implements ExperienceService {
                 .userId(userId)
                 .companyName(experienceRequest.getCompanyName())
                 .position(experienceRequest.getPosition())
-                .employmentType(experienceRequest.getEmploymentType())
+                .employmentType(EmploymentType.valueOf(experienceRequest.getEmploymentType()))
                 .location(experienceRequest.getLocation())
                 .startDate(experienceRequest.getStartDate())
                 .endDate(experienceRequest.getEndDate())
@@ -81,7 +82,7 @@ public class ExperienceServiceImpl implements ExperienceService {
 
         existingExperience.setCompanyName(experienceRequest.getCompanyName());
         existingExperience.setPosition(experienceRequest.getPosition());
-        existingExperience.setEmploymentType(experienceRequest.getEmploymentType());
+        existingExperience.setEmploymentType(EmploymentType.valueOf(experienceRequest.getEmploymentType()));
         existingExperience.setLocation(experienceRequest.getLocation());
         existingExperience.setStartDate(experienceRequest.getStartDate());
         existingExperience.setEndDate(experienceRequest.getEndDate());
